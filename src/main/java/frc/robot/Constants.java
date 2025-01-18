@@ -9,13 +9,15 @@ public class Constants {
 
 public static final class ElevatorConstants {
 
-    public static final int elevatorMotorRID = 0;
-    public static final int elevatorMotorLID = 1;
+    public static final int elevatorMotorRID = 31;
+    public static final int elevatorMotorLID = 32;
 
-    public static final int encoder1DIO = 0; //??????
+    public static final int encoder1DIO = 3; //??????
 
     //------------Setpoints---------------
-    public static final double neutral = 0;
+    public static final double BOTTOM_POSITION = 0.0;
+    public static final double MIDDLE_POSITION = 11.0;
+    public static final double TOP_POSITION = 22.28;
 
 }
 

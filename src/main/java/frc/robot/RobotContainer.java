@@ -14,9 +14,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
+import frc.robot.Commands.ElevatorTest;
+import frc.robot.Commands.ManualElevatorTest;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.ElevatorSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -32,6 +34,7 @@ public class RobotContainer {
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController joystick = new CommandXboxController(0);
+    private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem();
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
@@ -50,11 +53,22 @@ public class RobotContainer {
                     .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
-
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        ));
+     
+        // joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
+        // joystick.b().whileTrue(drivetrain.applyRequest(() ->
+        //     point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
+        // ));
+       joystick.a().whileTrue(new ManualElevatorTest(m_elevatorSubsystem, 0.15));  // Up slowly
+        joystick.b().whileTrue(new ManualElevatorTest(m_elevatorSubsystem, -0.15)); // Down slowly
+        
+        // Emergency stop
+        //joystick.x().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.stop(), m_elevatorSubsystem));
+        
+        // Original position commands - keep for testing
+        joystick.y().onTrue(new ElevatorTest(m_elevatorSubsystem, Math.abs(.01)));
+        joystick.rightBumper().onTrue(new ElevatorTest(m_elevatorSubsystem, Math.abs(21.5)));
+        joystick.x().onTrue(new ElevatorTest(m_elevatorSubsystem, Math.abs(11)));
+    
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
