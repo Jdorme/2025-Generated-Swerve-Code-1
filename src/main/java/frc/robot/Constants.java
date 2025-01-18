@@ -9,8 +9,8 @@ public class Constants {
 
 public static final class ElevatorConstants {
 
-    public static final int elevatorMotorRID = 25;
-    public static final int elevatorMotorLID = 26;
+    public static final int elevatorMotorRID = 0;
+    public static final int elevatorMotorLID = 1;
 
     public static final int encoder1DIO = 0; //??????
 
