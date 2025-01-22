@@ -21,4 +21,10 @@ public static final class ElevatorConstants {
 
 }
 
+public static final class AlgaeIntakeConstants {
+
+    //public static final int algaeIntakeMotor
+
+}
+
 }

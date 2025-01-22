@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Commands.ElevatorTest;
 import frc.robot.Commands.ManualElevatorTest;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.AlgaeIntake;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 
@@ -35,7 +36,7 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
     private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem();
-
+     private final AlgaeIntake m_algaeIntake = new AlgaeIntake();
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     public RobotContainer() {
@@ -60,6 +61,9 @@ public class RobotContainer {
         // ));
        joystick.a().whileTrue(new ManualElevatorTest(m_elevatorSubsystem, 0.15));  // Up slowly
         joystick.b().whileTrue(new ManualElevatorTest(m_elevatorSubsystem, -0.15)); // Down slowly
+        joystick.leftTrigger()
+            .onTrue(Commands.runOnce(() -> m_algaeIntake.intakeBall()))
+            .onFalse(Commands.runOnce(() -> m_algaeIntake.stop()));
         
         // Emergency stop
         //joystick.x().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.stop(), m_elevatorSubsystem));
