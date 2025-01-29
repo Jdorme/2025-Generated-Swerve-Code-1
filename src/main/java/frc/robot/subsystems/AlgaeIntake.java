@@ -1,99 +1,124 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.controls.VelocityVoltage;
-import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.CANrange;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class AlgaeIntake extends SubsystemBase {
-    private final TalonFX intakeMotor;
-    
-    // Constants
+    private static final double PULLEY_RATIO = 5.0;
     private static final double INTAKE_SPEED = 0.7;
-    private static final double HOLD_TORQUE = 2.0; // Nm
-    private static final double CURRENT_SPIKE_THRESHOLD = 40.0; // Increased from 30A to 40A
-    private static final int CURRENT_SPIKE_DURATION_THRESHOLD = 10; // Increased from 5 to 10 cycles
-    private static final double CURRENT_FILTER_ALPHA = 0.1; // For current smoothing
+    private static final double REVERSE_SPEED = -1;
+    private static final double HOLD_SPEED = 0.05;
+    private static final double BALL_DETECTION_THRESHOLD = .2;
+    private static final double AMBIENT_THRESHOLD = 50.0; // Lower is better
     
-    // Control requests
-    private final TorqueCurrentFOC torqueRequest;
-    private final VelocityVoltage velocityRequest;
+    private final TalonFX intakeMotor;
+    private final CANrange ballSensor;
+    private final DutyCycleOut dutyCycleControl;
     
-    // Current spike detection
-    private int currentSpikeCounter = 0;
-    private boolean hasBall = false;
-    private double filteredCurrent = 0;
+    private boolean isBallHeld = false;
+    private boolean wasLastStateBallPresent = false;
     private boolean isIntaking = false;
+    private boolean isReversing = false;
+    private String currentState = "Idle";
     
     public AlgaeIntake() {
-        // Initialize Kraken X60
-        intakeMotor = new TalonFX(1); // Change ID as needed
+        intakeMotor = new TalonFX(Constants.AlgaeIntakeConstants.algaeIntakeMotorID);
+        ballSensor = new CANrange(Constants.AlgaeIntakeConstants.algaeIntakeCANrangeID);
+        dutyCycleControl = new DutyCycleOut(0);
         
-        // Configure motor
-        TalonFXConfiguration configs = new TalonFXConfiguration();
-        configs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        configs.Slot0.kP = 0.11;
-        configs.Slot0.kI = 0.0;
-        configs.Slot0.kD = 0.0;
-        configs.TorqueCurrent.PeakForwardTorqueCurrent = 40;
-        configs.TorqueCurrent.PeakReverseTorqueCurrent = -40;
+        configureMotor();
+    }
+    
+    private void configureMotor() {
+        var motorConfig = new TalonFXConfiguration();
+        motorConfig.Feedback.SensorToMechanismRatio = PULLEY_RATIO;
+        motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        motorConfig.CurrentLimits.SupplyCurrentLimit = 40;
         
-        intakeMotor.getConfigurator().apply(configs);
-        
-        // Initialize control requests
-        torqueRequest = new TorqueCurrentFOC(0);
-        velocityRequest = new VelocityVoltage(0);
-    }
-    
-    public void intakeBall() {
-        isIntaking = true;
-        intakeMotor.setControl(velocityRequest.withVelocity(INTAKE_SPEED * 100)); // Convert to RPS
-    }
-    
-    public void holdBall() {
-        isIntaking = false;
-        intakeMotor.setControl(torqueRequest.withOutput(HOLD_TORQUE));
-    }
-    
-    public void stop() {
-        isIntaking = false;
-        intakeMotor.setControl(velocityRequest.withVelocity(0));
-        hasBall = false;
-        currentSpikeCounter = 0;
-        filteredCurrent = 0;
-    }
-    
-    public boolean hasBall() {
-        return hasBall;
+        intakeMotor.getConfigurator().apply(motorConfig);
+        intakeMotor.setNeutralMode(NeutralModeValue.Brake);
     }
     
     @Override
     public void periodic() {
-        if (!isIntaking) {
-            return; // Don't check for current spikes if we're not actively intaking
+        updateBallDetectionState();
+        updateDashboard();
+        
+        // Handle holding state in periodic
+        if (isBallHeld && !isIntaking && !isReversing) {
+            setIntakeSpeed(HOLD_SPEED);
+            currentState = "Holding";
         }
+    }
+    
+    private void updateDashboard() {
+        SmartDashboard.putBoolean("Has Ball", isBallHeld);
+        SmartDashboard.putBoolean("Is Intaking", isIntaking);
+        SmartDashboard.putBoolean("Is Reversing", isReversing);
+        SmartDashboard.putNumber("Ball Distance", ballSensor.getDistance().getValueAsDouble());
+        SmartDashboard.putString("Current State", currentState);
+        SmartDashboard.putNumber("Ambient Noise", ballSensor.getAmbientSignal().getValueAsDouble());
+    }
+    
+    private void updateBallDetectionState() {
+        boolean isBallPresent = checkBallPresence();
         
-        // Get and filter current
-        double rawCurrent = intakeMotor.getStatorCurrent().getValueAsDouble();
-        filteredCurrent = (CURRENT_FILTER_ALPHA * rawCurrent) + ((1 - CURRENT_FILTER_ALPHA) * filteredCurrent);
-        
-        // Output debug values to SmartDashboard
-        SmartDashboard.putNumber("Intake Raw Current", rawCurrent);
-        SmartDashboard.putNumber("Intake Filtered Current", filteredCurrent);
-        SmartDashboard.putNumber("Current Spike Counter", currentSpikeCounter);
-        SmartDashboard.putBoolean("Has Ball", hasBall);
-        
-        if (filteredCurrent >= CURRENT_SPIKE_THRESHOLD) {
-            currentSpikeCounter++;
-            if (currentSpikeCounter >= CURRENT_SPIKE_DURATION_THRESHOLD && !hasBall) {
-                hasBall = true;
-                holdBall(); // Switch to torque control once ball is detected
+        if (isBallPresent) {
+            if (!wasLastStateBallPresent) {
+                isBallHeld = true;
+                currentState = "Holding";
+                setIntakeSpeed(HOLD_SPEED);
             }
         } else {
-            currentSpikeCounter = Math.max(0, currentSpikeCounter - 2); // Gradual decrease
+            if (wasLastStateBallPresent && isBallHeld) {
+                isBallHeld = false;
+                currentState = "Ball Lost";
+            }
         }
+        
+        wasLastStateBallPresent = isBallPresent;
+    }
+    
+    private boolean checkBallPresence() {
+        return ballSensor.getDistance().getValueAsDouble() < BALL_DETECTION_THRESHOLD && 
+               ballSensor.getAmbientSignal().getValueAsDouble() < AMBIENT_THRESHOLD;
+    }
+    
+    public void intake() {
+        if (!isBallHeld) {
+            setIntakeSpeed(INTAKE_SPEED);
+            isIntaking = true;
+            isReversing = false;
+            currentState = "Intaking";
+        }
+    }
+    
+    public void reverse() {
+        setIntakeSpeed(REVERSE_SPEED);
+        isBallHeld = false;
+        isIntaking = false;
+        isReversing = true;
+        currentState = "Reversing";
+    }
+    
+    public void stop() {
+        setIntakeSpeed(0);
+        isIntaking = false;
+        isReversing = false;
+        currentState = "Idle";
+    }
+    
+    private void setIntakeSpeed(double speed) {
+        intakeMotor.setControl(dutyCycleControl.withOutput(speed));
+    }
+    
+    public boolean hasBall() {
+        return isBallHeld;
     }
 }

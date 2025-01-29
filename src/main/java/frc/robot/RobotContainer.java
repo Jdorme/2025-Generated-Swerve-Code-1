@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Commands.ElevatorTest;
@@ -73,9 +74,32 @@ public class RobotContainer {
         // ));
        joystick.a().whileTrue(new ManualElevatorTest(m_elevatorSubsystem, 0.15));  // Up slowly
         joystick.b().whileTrue(new ManualElevatorTest(m_elevatorSubsystem, -0.15)); // Down slowly
-        joystick.leftTrigger()
-            .onTrue(Commands.runOnce(() -> m_algaeIntake.intakeBall()))
-            .onFalse(Commands.runOnce(() -> m_algaeIntake.stop()));
+
+
+            m_algaeIntake.setDefaultCommand(
+      new RunCommand(
+          () -> {
+              if (!m_algaeIntake.hasBall()) {
+                  m_algaeIntake.stop();
+              }
+          },
+          m_algaeIntake
+      )
+  );
+  
+  joystick.rightTrigger()
+      .whileTrue(new RunCommand(
+          () -> m_algaeIntake.intake(),
+          m_algaeIntake
+      ));
+  
+      joystick.leftTrigger()
+      .whileTrue(new RunCommand(
+          () -> m_algaeIntake.reverse(),
+          m_algaeIntake
+            ));
+        
+    ;
         
         // Emergency stop
         //joystick.x().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.stop(), m_elevatorSubsystem));
