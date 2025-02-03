@@ -17,6 +17,13 @@ public static final class AlgaeIntakeConstants {
 
 }
     
+public static final class CoralIntakeConstants {
+
+    public static final int coralIntakeMotorID = 35; 
+    public static final int algaeIntakeCANrangeID = 36;
+
+}
+
 public static final class ElevatorConstants {
 
     public static final int elevatorMotorRID = 31;
@@ -31,11 +38,7 @@ public static final class ElevatorConstants {
 
 }
 
-public static final class CoralIntakeConstants {
 
-    public static final int coralIntakeMotorID = 0; //CHANGE
-
-}
 
 //Drivetrain IDs--------------------------------------------------
 
