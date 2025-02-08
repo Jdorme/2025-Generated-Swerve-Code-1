@@ -18,12 +18,17 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.Constants.ArmConstants;
 import frc.robot.Commands.ElevatorTest;
 import frc.robot.Commands.ManualElevatorTest;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.AlgaeIntake;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.IntegratedMechanismSubsystem;
+import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.Commands.ArmCommand;
+import frc.robot.Commands.IntegratedMechanismCommand;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -42,6 +47,9 @@ public class RobotContainer {
     private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem();
      private final AlgaeIntake m_algaeIntake = new AlgaeIntake(); 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    private final ArmSubsystem m_ArmSubsystem = new ArmSubsystem();
+    private final IntegratedMechanismSubsystem mechanism = 
+    new IntegratedMechanismSubsystem(m_elevatorSubsystem, m_ArmSubsystem);
 
     private final SendableChooser<Command> autoChooser;
 
@@ -71,11 +79,7 @@ public class RobotContainer {
         // joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
         // joystick.b().whileTrue(drivetrain.applyRequest(() ->
         //     point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        // ));
-       joystick.a().whileTrue(new ManualElevatorTest(m_elevatorSubsystem, 0.15));  // Up slowly
-        joystick.b().whileTrue(new ManualElevatorTest(m_elevatorSubsystem, -0.15)); // Down slowly
-
-
+        // ));  
             m_algaeIntake.setDefaultCommand(
       new RunCommand(
           () -> {
@@ -101,14 +105,23 @@ public class RobotContainer {
         
     ;
         
-        // Emergency stop
-        //joystick.x().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.stop(), m_elevatorSubsystem));
-        
-        // Original position commands - keep for testing
-        joystick.y().onTrue(new ElevatorTest(m_elevatorSubsystem, Math.abs(.01)));
-        joystick.rightBumper().onTrue(new ElevatorTest(m_elevatorSubsystem, Math.abs(21.5)));
-        joystick.x().onTrue(new ElevatorTest(m_elevatorSubsystem, Math.abs(11)));
+        joystick.y().onTrue(new IntegratedMechanismCommand(mechanism, 
+        IntegratedMechanismSubsystem.Positions.STOWED));
     
+    joystick.b().onTrue(new IntegratedMechanismCommand(mechanism, 
+        IntegratedMechanismSubsystem.Positions.L4));  // Highest level
+    
+    joystick.x().onTrue(new IntegratedMechanismCommand(mechanism, 
+        IntegratedMechanismSubsystem.Positions.L3));  // Middle-high level
+        
+    joystick.a().onTrue(new IntegratedMechanismCommand(mechanism, 
+        IntegratedMechanismSubsystem.Positions.L2));  // Middle level
+        
+    joystick.leftBumper().onTrue(new IntegratedMechanismCommand(mechanism, 
+        IntegratedMechanismSubsystem.Positions.PICKUP));
+    
+    joystick.rightBumper().onTrue(new IntegratedMechanismCommand(mechanism, 
+        IntegratedMechanismSubsystem.Positions.Start_Position));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.

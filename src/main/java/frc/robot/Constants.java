@@ -13,7 +13,7 @@ public class Constants {
 public static final class AlgaeIntakeConstants {
 
     public static final int algaeIntakeMotorID = 33;
-    public static final int algaeIntakeCANrangeID = 34;
+    public static final int algaeIntakeCANrangeID = 37;
 
 }
     
@@ -37,8 +37,71 @@ public static final class ElevatorConstants {
     public static final double TOP_POSITION = 22.28;
 
 }
+public static final class ArmConstants {
+    public static final int armMotorID = 17;
+    
+    //------------Setpoints---------------
+    public static final double STOWED_POSITION = 0.0;
+    public static final double MIDDLE_POSITION = 90.0;
+    public static final double EXTENDED_POSITION = 180.0;
+}
 
+// Add to Constants.java
 
+public static final class MotionMagicConstants {
+    // Toggle between testing and competition speeds
+    public static final boolean TESTING_MODE = true;  // Set to false for competition
+
+    public static final class ElevatorMotionMagic {
+        // Testing speeds (slower)
+        private static final double TEST_CRUISE_VELOCITY = 15;  // 25% of competition speed
+        private static final double TEST_ACCELERATION = 25;     // 25% of competition speed
+        private static final double TEST_JERK = 200;           // 25% of competition speed
+
+        // Competition speeds (faster)
+        private static final double COMP_CRUISE_VELOCITY = 120;
+        private static final double COMP_ACCELERATION = 200;
+        private static final double COMP_JERK = 1600;
+
+        // Getter methods that return the appropriate speed based on mode
+        public static double getCruiseVelocity() {
+            return TESTING_MODE ? TEST_CRUISE_VELOCITY : COMP_CRUISE_VELOCITY;
+        }
+
+        public static double getAcceleration() {
+            return TESTING_MODE ? TEST_ACCELERATION : COMP_ACCELERATION;
+        }
+
+        public static double getJerk() {
+            return TESTING_MODE ? TEST_JERK : COMP_JERK;
+        }
+    }
+
+    public static final class ArmMotionMagic {
+        // Testing speeds (slower)
+        private static final double TEST_CRUISE_VELOCITY = 20;  // Even slower for arm testing
+        private static final double TEST_ACCELERATION = 40;     
+        private static final double TEST_JERK = 300;           
+
+        // Competition speeds (faster)
+        private static final double COMP_CRUISE_VELOCITY = 120;
+        private static final double COMP_ACCELERATION = 200;
+        private static final double COMP_JERK = 1600;
+
+        // Getter methods that return the appropriate speed based on mode
+        public static double getCruiseVelocity() {
+            return TESTING_MODE ? TEST_CRUISE_VELOCITY : COMP_CRUISE_VELOCITY;
+        }
+
+        public static double getAcceleration() {
+            return TESTING_MODE ? TEST_ACCELERATION : COMP_ACCELERATION;
+        }
+
+        public static double getJerk() {
+            return TESTING_MODE ? TEST_JERK : COMP_JERK;
+        }
+    }
+}
 
 //Drivetrain IDs--------------------------------------------------
 

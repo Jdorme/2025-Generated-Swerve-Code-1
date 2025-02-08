@@ -47,25 +47,25 @@ public class ElevatorSubsystem extends SubsystemBase {
         
         // Configure the PID gains
         var slot0Configs = new Slot0Configs();
-        slot0Configs.kP = 15; 
-        slot0Configs.kI = 0;
-        slot0Configs.kD = 0;
-        slot0Configs.kV = 0;
+        slot0Configs.kP = 15; // Increased from 1.0
+        slot0Configs.kI = 0; // Added some integral gain
+        slot0Configs.kD = 0; // Added some derivative gain
+        slot0Configs.kV = 0; // Added feed forward
         motorConfig.Slot0 = slot0Configs;
         
         // Motion Magic settings
         var motionMagicConfigs = new MotionMagicConfigs();
-        motionMagicConfigs.MotionMagicCruiseVelocity = 120;
-        motionMagicConfigs.MotionMagicAcceleration = 200;
-        motionMagicConfigs.MotionMagicJerk = 1600;
+        motionMagicConfigs.MotionMagicCruiseVelocity = Constants.MotionMagicConstants.ElevatorMotionMagic.getCruiseVelocity();
+        motionMagicConfigs.MotionMagicAcceleration = Constants.MotionMagicConstants.ElevatorMotionMagic.getAcceleration();
+        motionMagicConfigs.MotionMagicJerk = Constants.MotionMagicConstants.ElevatorMotionMagic.getJerk();
         motorConfig.MotionMagic = motionMagicConfigs;
         
         // Configure master motor
-        motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         masterMotor.getConfigurator().apply(motorConfig);
         
         // Configure follower motor
-        motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         followerMotor.getConfigurator().apply(motorConfig);
         
         // Keep follower following in same direction as master
