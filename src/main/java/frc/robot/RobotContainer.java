@@ -21,11 +21,15 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Commands.ElevatorTest;
 import frc.robot.Commands.ManualElevatorTest;
+import frc.robot.Commands.ArmElevatorToPositionCommand;
+import frc.robot.Commands.StowOnIntakeCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.AlgaeIntake;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.CoralIntake;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.IntegratedMechanismSubsystem;
+import frc.robot.subsystems.SafetySubsystem;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.Commands.ArmCommand;
 import frc.robot.Commands.IntegratedMechanismCommand;
@@ -48,8 +52,12 @@ public class RobotContainer {
      private final AlgaeIntake m_algaeIntake = new AlgaeIntake(); 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final ArmSubsystem m_ArmSubsystem = new ArmSubsystem();
-    private final IntegratedMechanismSubsystem mechanism = 
-    new IntegratedMechanismSubsystem(m_elevatorSubsystem, m_ArmSubsystem);
+    private final CoralIntake m_coralIntake = new CoralIntake();
+    // private final IntegratedMechanismSubsystem mechanism = 
+    // new IntegratedMechanismSubsystem(m_elevatorSubsystem, m_ArmSubsystem);
+    private final SafetySubsystem m_safetySystem = new SafetySubsystem(m_elevatorSubsystem, m_ArmSubsystem, 
+    m_coralIntake, m_algaeIntake);
+
 
     private final SendableChooser<Command> autoChooser;
 
@@ -105,23 +113,29 @@ public class RobotContainer {
         
     ;
         
-        joystick.y().onTrue(new IntegratedMechanismCommand(mechanism, 
-        IntegratedMechanismSubsystem.Positions.STOWED));
-    
-    joystick.b().onTrue(new IntegratedMechanismCommand(mechanism, 
-        IntegratedMechanismSubsystem.Positions.L4));  // Highest level
-    
-    joystick.x().onTrue(new IntegratedMechanismCommand(mechanism, 
-        IntegratedMechanismSubsystem.Positions.L3));  // Middle-high level
-        
-    joystick.a().onTrue(new IntegratedMechanismCommand(mechanism, 
-        IntegratedMechanismSubsystem.Positions.L2));  // Middle level
-        
-    joystick.leftBumper().onTrue(new IntegratedMechanismCommand(mechanism, 
-        IntegratedMechanismSubsystem.Positions.PICKUP));
-    
-    joystick.rightBumper().onTrue(new IntegratedMechanismCommand(mechanism, 
-        IntegratedMechanismSubsystem.Positions.Start_Position));
+    m_safetySystem.setDefaultCommand(
+    new StowOnIntakeCommand(m_safetySystem, m_algaeIntake, m_coralIntake)
+);
+
+// joystick.povUp().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 22.28, 65));    // L4
+// joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 16.5, 75));  // L3
+// joystick.povDown().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 11.0, 90));   // L2
+// joystick.povLeft().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 14.5, -125)); // PICKUP
+
+joystick.povUp().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L4[0]));    // L4
+joystick.povRight().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L3[0]));  // L3
+joystick.povDown().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L2[0]));   // L2
+joystick.povLeft().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 14.5, -125)); // PICKUP
+
+joystick.rightBumper().whileTrue(new ArmCommand(m_ArmSubsystem, Constants.SafetyConstants.L2[1]));
+joystick.rightBumper().onFalse(new ArmCommand(m_ArmSubsystem, 0));
+
+
+
+joystick.a().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 11.0, 0)); // stow
+
+
+
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.

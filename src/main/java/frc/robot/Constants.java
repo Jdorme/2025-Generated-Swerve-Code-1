@@ -6,6 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
+import frc.robot.subsystems.IntegratedMechanismSubsystem.Position;
 
 /** Add your docs here. */
 public class Constants {
@@ -20,7 +21,7 @@ public static final class AlgaeIntakeConstants {
 public static final class CoralIntakeConstants {
 
     public static final int coralIntakeMotorID = 35; 
-    public static final int algaeIntakeCANrangeID = 36;
+    public static final int coralIntakeCANrangeID = 36;
 
 }
 
@@ -40,10 +41,17 @@ public static final class ElevatorConstants {
 public static final class ArmConstants {
     public static final int armMotorID = 17;
     
-    //------------Setpoints---------------
-    public static final double STOWED_POSITION = 0.0;
-    public static final double MIDDLE_POSITION = 90.0;
-    public static final double EXTENDED_POSITION = 180.0;
+}
+
+public static final class SafetyConstants{
+        //------------Setpoints---------------
+                // (elevator height, arm angle)
+                public static final double[] STOWED = {11, 0.0};
+                public static final double[] L4 = {22.28, 25};
+                public static final double[] L3 = {16.5, 25};
+                public static final double[] L2 = {11.0, 25};
+                public static final double[] PICKUP = {14.5, -125};
+                public static final double[] Start_Position = {0, 0};
 }
 
 // Add to Constants.java
