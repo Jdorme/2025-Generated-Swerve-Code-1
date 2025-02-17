@@ -21,7 +21,7 @@ import frc.robot.Commands.ElevatorTest;
 import frc.robot.Commands.ManualElevatorTest;
 import frc.robot.Commands.ReefAlignmentCommand;
 import frc.robot.Commands.ArmElevatorToPositionCommand;
-import frc.robot.Commands.StowOnIntakeCommand;
+import frc.robot.Commands.CoralIntakeCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.AlgaeIntake;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -87,23 +87,7 @@ public class RobotContainer {
                 m_algaeIntake
             )
         );
-  
-        joystick.rightTrigger()
-            .whileTrue(new RunCommand(
-                () -> m_algaeIntake.intake(),
-                m_algaeIntake
-            ));
-  
-        joystick.leftTrigger()
-            .whileTrue(new RunCommand(
-                () -> m_algaeIntake.reverse(),
-                m_algaeIntake
-            ));
-        
-        m_safetySystem.setDefaultCommand(
-            new StowOnIntakeCommand(m_safetySystem, m_algaeIntake, m_coralIntake)
-        );
-
+        joystick.rightTrigger().whileTrue(new CoralIntakeCommand(m_coralIntake, m_safetySystem));
         joystick.povUp().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L4[0]));
         joystick.povRight().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L3[0]));
         joystick.povDown().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L2[0]));
