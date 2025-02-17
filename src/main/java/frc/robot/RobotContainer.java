@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Commands.ElevatorTest;
 import frc.robot.Commands.ManualElevatorTest;
+import frc.robot.Commands.ReefAlignmentCommand;
 import frc.robot.Commands.ArmElevatorToPositionCommand;
 import frc.robot.Commands.StowOnIntakeCommand;
 import frc.robot.generated.TunerConstants;
@@ -64,29 +65,17 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Mode", autoChooser);
 
         configureBindings();
-        configureVisionTestBindings();
+        
     }
 
     private void configureBindings() {
-       // First, let's modify the default drive command to be more explicit about its behavior
-    drivetrain.setDefaultCommand(
-        drivetrain.applyRequest(() -> {
-            // Get our joystick inputs, but add deadbands to prevent drift
-            double forwardInput = -joystick.getLeftY();
-            double sidewaysInput = -joystick.getLeftX();
-            double rotationInput = -joystick.getRightX();
-            
-            // Only apply rotation if we're actually trying to rotate
-            // This helps prevent unwanted spinning
-            if (Math.abs(rotationInput) < 0.1) {
-                rotationInput = 0.0;
-            }
-            
-            return drive.withVelocityX(forwardInput * MaxSpeed)
-                       .withVelocityY(sidewaysInput * MaxSpeed)
-                       .withRotationalRate(rotationInput * MaxAngularRate);
-        })
-    );
+        drivetrain.setDefaultCommand(
+            drivetrain.applyRequest(() ->
+                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed)
+                    .withVelocityY(-joystick.getLeftX() * MaxSpeed)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
+            )
+        );
      
         m_algaeIntake.setDefaultCommand(
             new RunCommand(
@@ -133,18 +122,31 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
+     // Add Reef Alignment Bindings
+    // Align to the left side of the Reef AprilTag
+    joystick.x().onTrue(
+        Commands.runOnce(() -> 
+            new ReefAlignmentCommand(
+                drivetrain, 
+                m_visionSubsystem, 
+                ReefAlignmentCommand.AlignmentSide.LEFT
+            ).schedule()
+        )
+    );
+
+    // Align to the right side of the Reef AprilTag
+    joystick.b().onTrue(
+        Commands.runOnce(() -> 
+            new ReefAlignmentCommand(
+                drivetrain, 
+                m_visionSubsystem, 
+                ReefAlignmentCommand.AlignmentSide.RIGHT
+            ).schedule()
+        )
+    );
     }
 
-    private void configureVisionTestBindings() {
-        if (RobotBase.isSimulation()) {
-            joystick.b().onTrue(Commands.runOnce(() -> {
-                Pose2d simulatedVisionMeasurement = new Pose2d(
-                    3.0, 3.0, Rotation2d.fromDegrees(90)
-                );
-                m_visionSubsystem.processSimulatedMeasurement(simulatedVisionMeasurement);
-            }));
-        }
-    }
+
 
     public Command getAutonomousCommand() {
         return autoChooser.getSelected();

@@ -54,6 +54,44 @@ public static final class SafetyConstants{
                 public static final double[] Start_Position = {0, 0};
 }
 
+public static final class ReefAlignmentConstants {
+    // Tag Alignment Configuration
+    public static final int[] VALID_REEF_TAG_IDS = {6, 7, 8, 9, 10, 11};
+    
+    // Alignment Distance Parameters
+    public static final double TARGET_DISTANCE = 0.6; // meters from tag
+    
+    // Tolerance Parameters
+    public static final double ALIGNMENT_TOLERANCE_METERS = 0.05; 
+    public static final double ROTATION_TOLERANCE_DEGREES = 2.0;
+    
+    // Retry Mechanism
+    public static final int MAX_DETECTION_ATTEMPTS = 3;
+    public static final double DETECTION_RETRY_DELAY_SECONDS = 0.5;
+    public static final double ALIGNMENT_TIMEOUT_SECONDS = 10.0;
+    
+    // PID Configuration for X Alignment
+    public static final class XAxisPID {
+        public static final double kP = 1.5;
+        public static final double kI = 0.0;
+        public static final double kD = 0.1;
+    }
+    
+    // PID Configuration for Y Alignment
+    public static final class YAxisPID {
+        public static final double kP = 1.5;
+        public static final double kI = 0.0;
+        public static final double kD = 0.1;
+    }
+    
+    // PID Configuration for Rotation Alignment
+    public static final class RotationPID {
+        public static final double kP = 0.05;
+        public static final double kI = 0.0;
+        public static final double kD = 0.005;
+    }
+}
+
 // Add to Constants.java
 
 public static final class MotionMagicConstants {
