@@ -15,12 +15,12 @@ public class CoralIntake extends SubsystemBase {
     private static final double CURRENT_LIMIT = 40.0;
 
     // Control constants
-    private static final double INTAKE_SPEED = 0.05; // Reduced speed as requested
-    private static final double HOLD_SPEED = 0.05;
+    private static final double INTAKE_SPEED = .25;
+    private static final double HOLD_SPEED = 0;
     private static final double REVERSE_SPEED = -0.5;
 
     // Sensor thresholds
-    private static final double CORAL_DETECTION_THRESHOLD = 0.2;
+    private static final double CORAL_DETECTION_THRESHOLD = .1;
     private static final double AMBIENT_THRESHOLD = 50.0;
 
     // System state
@@ -42,6 +42,7 @@ public class CoralIntake extends SubsystemBase {
     private boolean isCoralHeld = false;
     private boolean wasLastStateCoralPresent = false;
     private String errorMessage = "";
+    private boolean manualControl = false;  // New flag for manual control
 
     public CoralIntake() {
         intakeMotor = new TalonFX(Constants.CoralIntakeConstants.coralIntakeMotorID);
@@ -57,12 +58,9 @@ public class CoralIntake extends SubsystemBase {
     
     private void configureMotor() {
         var motorConfig = new TalonFXConfiguration();
-        
-        // Motor configuration
         motorConfig.Feedback.SensorToMechanismRatio = PULLEY_RATIO;
         motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         motorConfig.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
-        
         intakeMotor.getConfigurator().apply(motorConfig);
         intakeMotor.setNeutralMode(NeutralModeValue.Brake);
     }
@@ -71,19 +69,13 @@ public class CoralIntake extends SubsystemBase {
     public void periodic() {
         if (currentState != IntakeState.ERROR) {
             try {
-                updateCoralDetectionState();
-                updateMotorState();
+                if (!manualControl) {  // Only do automatic control if not in manual mode
+                    updateCoralDetectionState();
+                }
                 updateDashboard();
             } catch (Exception e) {
                 handleError("Periodic update failed: " + e.getMessage());
             }
-        }
-    }
-    
-    private void updateMotorState() {
-        if (isCoralHeld && currentState != IntakeState.REVERSING) {
-            setIntakeSpeed(HOLD_SPEED);
-            currentState = IntakeState.HOLDING;
         }
     }
 
@@ -94,7 +86,7 @@ public class CoralIntake extends SubsystemBase {
             isCoralHeld = true;
             currentState = IntakeState.HOLDING;
             setIntakeSpeed(HOLD_SPEED);
-        } else if (!isCoralPresent && wasLastStateCoralPresent && isCoralHeld) {
+        } else if (!isCoralPresent && wasLastStateCoralPresent && isCoralHeld && !manualControl) {
             isCoralHeld = false;
             currentState = IntakeState.IDLE;
         }
@@ -105,12 +97,12 @@ public class CoralIntake extends SubsystemBase {
     private boolean checkCoralPresence() {
         double distance = coralSensor.getDistance().getValueAsDouble();
         double ambient = coralSensor.getAmbientSignal().getValueAsDouble();
-        
         return distance < CORAL_DETECTION_THRESHOLD && ambient < AMBIENT_THRESHOLD;
     }
     
     public void intakeCoral() {
         if (!isCoralHeld && currentState != IntakeState.ERROR) {
+            manualControl = false;  // Return to automatic control
             setIntakeSpeed(INTAKE_SPEED);
             currentState = IntakeState.INTAKING;
         }
@@ -118,14 +110,15 @@ public class CoralIntake extends SubsystemBase {
     
     public void reverse() {
         if (currentState != IntakeState.ERROR) {
+            manualControl = true;  // Enable manual control
             setIntakeSpeed(REVERSE_SPEED);
-            isCoralHeld = false;
             currentState = IntakeState.REVERSING;
         }
     }
     
     public void stop() {
         if (currentState != IntakeState.ERROR) {
+            manualControl = false;  // Return to automatic control
             setIntakeSpeed(0);
             currentState = IntakeState.IDLE;
         }
@@ -145,7 +138,6 @@ public class CoralIntake extends SubsystemBase {
         try {
             intakeMotor.stopMotor();
         } catch (Exception e) {
-            // If we can't even stop the motor, log it but don't throw
             System.err.println("Failed to stop motor in error handler: " + e.getMessage());
         }
     }
@@ -161,6 +153,7 @@ public class CoralIntake extends SubsystemBase {
             coralSensor.getDistance().getValueAsDouble());
         SmartDashboard.putNumber("Coral/Ambient Noise", 
             coralSensor.getAmbientSignal().getValueAsDouble());
+        SmartDashboard.putBoolean("Coral/Manual Control", manualControl);
         
         if (currentState == IntakeState.ERROR) {
             SmartDashboard.putString("Coral/Error", errorMessage);

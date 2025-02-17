@@ -79,7 +79,7 @@ public class ReefAlignmentCommand extends Command {
         this.side = side;
         
         // Get Reef-side Limelight Network Table
-        reefLimelight = NetworkTableInstance.getDefault().getTable("limelight-reefside");
+        reefLimelight = NetworkTableInstance.getDefault().getTable("reef");
         
         // Configure PID Controllers
         configureControllers();

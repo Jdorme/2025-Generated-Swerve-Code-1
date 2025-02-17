@@ -20,6 +20,7 @@ import frc.robot.Constants.ArmConstants;
 import frc.robot.Commands.ElevatorTest;
 import frc.robot.Commands.ManualElevatorTest;
 import frc.robot.Commands.ReefAlignmentCommand;
+import frc.robot.Commands.StowOnIntakeCommand;
 import frc.robot.Commands.ArmElevatorToPositionCommand;
 import frc.robot.Commands.CoralIntakeCommand;
 import frc.robot.generated.TunerConstants;
@@ -33,6 +34,10 @@ import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.Commands.ArmCommand;
 import frc.robot.Commands.IntegratedMechanismCommand;
+import frc.robot.Commands.L2ScoreCommand;
+import frc.robot.Commands.L3ScoreCommand;
+//import frc.robot.Commands.L4ScoreCommand;
+import frc.robot.Commands.L4ScoreCommand;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
@@ -87,7 +92,15 @@ public class RobotContainer {
                 m_algaeIntake
             )
         );
+
+        m_safetySystem.setDefaultCommand(
+            new StowOnIntakeCommand(m_safetySystem, m_algaeIntake, m_coralIntake)
+        );
+
         joystick.rightTrigger().whileTrue(new CoralIntakeCommand(m_coralIntake, m_safetySystem));
+        joystick.y().onTrue(new L4ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
+        joystick.x().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
+        joystick.b().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povUp().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L4[0]));
         joystick.povRight().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L3[0]));
         joystick.povDown().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L2[0]));
@@ -108,26 +121,26 @@ public class RobotContainer {
         drivetrain.registerTelemetry(logger::telemeterize);
      // Add Reef Alignment Bindings
     // Align to the left side of the Reef AprilTag
-    joystick.x().onTrue(
-        Commands.runOnce(() -> 
-            new ReefAlignmentCommand(
-                drivetrain, 
-                m_visionSubsystem, 
-                ReefAlignmentCommand.AlignmentSide.LEFT
-            ).schedule()
-        )
-    );
+    // joystick.x().onTrue(
+    //     Commands.runOnce(() -> 
+    //         new ReefAlignmentCommand(
+    //             drivetrain, 
+    //             m_visionSubsystem, 
+    //             ReefAlignmentCommand.AlignmentSide.LEFT
+    //         ).schedule()
+    //     )
+    // );
 
-    // Align to the right side of the Reef AprilTag
-    joystick.b().onTrue(
-        Commands.runOnce(() -> 
-            new ReefAlignmentCommand(
-                drivetrain, 
-                m_visionSubsystem, 
-                ReefAlignmentCommand.AlignmentSide.RIGHT
-            ).schedule()
-        )
-    );
+    // // Align to the right side of the Reef AprilTag
+    // joystick.b().onTrue(
+    //     Commands.runOnce(() -> 
+    //         new ReefAlignmentCommand(
+    //             drivetrain, 
+    //             m_visionSubsystem, 
+    //             ReefAlignmentCommand.AlignmentSide.RIGHT
+    //         ).schedule()
+    //     )
+    // );
     }
 
 

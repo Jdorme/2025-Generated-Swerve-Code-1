@@ -12,16 +12,16 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class VisionSubsystem extends SubsystemBase {
     // Network tables for both Limelights
-    private final NetworkTable m_limelightSourceSide;
-    private final NetworkTable m_limelightReefSide;
+    private final NetworkTable m_limelightSource;
+    private final NetworkTable m_limelightReef;
     
     // Track connection status for each Limelight
-    private boolean m_sourceSideConnected = false;
-    private boolean m_reefSideConnected = false;
+    private boolean m_sourceConnected = false;
+    private boolean m_reefConnected = false;
     
     // Track last successful connection attempt time
-    private double m_lastSourceSideConnectionAttempt = 0;
-    private double m_lastReefSideConnectionAttempt = 0;
+    private double m_lastSourceConnectionAttempt = 0;
+    private double m_lastReefConnectionAttempt = 0;
     
     // How often to retry connecting to disconnected Limelights (seconds)
     private static final double CONNECTION_RETRY_INTERVAL = 1.0;
@@ -36,12 +36,12 @@ public class VisionSubsystem extends SubsystemBase {
         m_drivetrain = drivetrain;
         
         // Initialize NetworkTables connections to both Limelights
-        m_limelightSourceSide = NetworkTableInstance.getDefault().getTable("limelight-sourceside");
-        m_limelightReefSide = NetworkTableInstance.getDefault().getTable("limelight-reefside");
+        m_limelightSource = NetworkTableInstance.getDefault().getTable("source");
+        m_limelightReef = NetworkTableInstance.getDefault().getTable("reef");
         
         // Initial connection attempt
-        checkAndConfigureLimelight(m_limelightSourceSide, "SourceSide");
-        checkAndConfigureLimelight(m_limelightReefSide, "ReefSide");
+        checkAndConfigureLimelight(m_limelightSource, "Source");
+        checkAndConfigureLimelight(m_limelightReef, "Reef");
     }
     
     private boolean checkAndConfigureLimelight(NetworkTable limelightTable, String name) {
@@ -93,24 +93,24 @@ public class VisionSubsystem extends SubsystemBase {
     public void periodic() {
         double currentTime = Timer.getFPGATimestamp();
         
-        // Check SourceSide Limelight connection
-        if (!m_sourceSideConnected && currentTime - m_lastSourceSideConnectionAttempt >= CONNECTION_RETRY_INTERVAL) {
-            m_sourceSideConnected = checkAndConfigureLimelight(m_limelightSourceSide, "SourceSide");
-            m_lastSourceSideConnectionAttempt = currentTime;
+        // Check Source Limelight connection
+        if (!m_sourceConnected && currentTime - m_lastSourceConnectionAttempt >= CONNECTION_RETRY_INTERVAL) {
+            m_sourceConnected = checkAndConfigureLimelight(m_limelightSource, "Source");
+            m_lastSourceConnectionAttempt = currentTime;
         }
         
-        // Check ReefSide Limelight connection
-        if (!m_reefSideConnected && currentTime - m_lastReefSideConnectionAttempt >= CONNECTION_RETRY_INTERVAL) {
-            m_reefSideConnected = checkAndConfigureLimelight(m_limelightReefSide, "ReefSide");
-            m_lastReefSideConnectionAttempt = currentTime;
+        // Check Reef Limelight connection
+        if (!m_reefConnected && currentTime - m_lastReefConnectionAttempt >= CONNECTION_RETRY_INTERVAL) {
+            m_reefConnected = checkAndConfigureLimelight(m_limelightReef, "Reef");
+            m_lastReefConnectionAttempt = currentTime;
         }
         
         // Only process data from connected Limelights
-        if (m_sourceSideConnected) {
-            processLimelightData(m_limelightSourceSide, "SourceSide");
+        if (m_sourceConnected) {
+            processLimelightData(m_limelightSource, "Source");
         }
-        if (m_reefSideConnected) {
-            processLimelightData(m_limelightReefSide, "ReefSide");
+        if (m_reefConnected) {
+            processLimelightData(m_limelightReef, "Reef");
         }
     }
     
@@ -157,20 +157,20 @@ public class VisionSubsystem extends SubsystemBase {
             
         } catch (Exception e) {
             // If we get any exception while processing data, mark the Limelight as disconnected
-            if (name.equals("SourceSide")) {
-                m_sourceSideConnected = false;
+            if (name.equals("Source")) {
+                m_sourceConnected = false;
             } else {
-                m_reefSideConnected = false;
+                m_reefConnected = false;
             }
             SmartDashboard.putString("Vision/" + name + "/Status", "Error: " + e.getMessage());
         }
     }
     
-    public boolean isSourceSideLimelightConnected() {
-        return m_sourceSideConnected;
+    public boolean isSourceLimelightConnected() {
+        return m_sourceConnected;
     }
     
-    public boolean isReefSideLimelightConnected() {
-        return m_reefSideConnected;
+    public boolean isReefLimelightConnected() {
+        return m_reefConnected;
     }
 }
