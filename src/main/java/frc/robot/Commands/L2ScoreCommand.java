@@ -10,11 +10,11 @@ import frc.robot.subsystems.ElevatorSubsystem;
 
 public class L2ScoreCommand extends Command {
     private enum ScoreState {
-        ELEVATOR_UP,
-        ARM_TO_SCORE,
-        SCORING,
-        ARM_BACK,
-        ELEVATOR_STOW,
+        ARM_START,         // Start arm movement
+        ELEVATOR_DELAY,    // Short delay before starting elevator
+        MOVE_TO_SCORE,     // Both arm and elevator moving to scoring position
+        SCORING,           // Start scoring
+        RETURN_TO_STOW,    // Return both systems to stowed position
         DONE
     }
 
@@ -22,12 +22,14 @@ public class L2ScoreCommand extends Command {
     private final CoralIntake m_coralIntake;
     private final ElevatorSubsystem m_elevator;
     private final ArmSubsystem m_arm;
-    private ScoreState currentState = ScoreState.ELEVATOR_UP;
+    private ScoreState currentState = ScoreState.ARM_START;
     private double waitStartTime = 0;
+    private double elevatorDelayTime = 0;
+    private static final double ELEVATOR_START_DELAY = 0.05; // seconds
     
     private static final double ELEVATOR_TOLERANCE = 0.5;
     private static final double ARM_TOLERANCE = 2.0;
-    private static final double SCORING_TIME = .25;
+    private static final double SCORING_TIME = .05;
     
     public L2ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
                          ElevatorSubsystem elevator, ArmSubsystem arm) {
@@ -40,15 +42,15 @@ public class L2ScoreCommand extends Command {
 
     @Override
     public void initialize() {
-        System.out.println("L2Score: Starting command");
-        currentState = ScoreState.ELEVATOR_UP;
-        m_elevator.setHeight(SafetyConstants.L2[0]);
-        m_arm.setAngle(0);
+        System.out.println("L2Score: Starting command - moving arm first");
+        currentState = ScoreState.ARM_START;
+        // Start arm movement first
+        m_arm.setAngle(SafetyConstants.L2[1]);
+        elevatorDelayTime = System.currentTimeMillis();
     }
 
-    private boolean isElevatorAtTarget() {
+    private boolean isElevatorAtTarget(double targetHeight) {
         double currentHeight = m_elevator.getCurrentHeight();
-        double targetHeight = SafetyConstants.L2[0];
         boolean atTarget = Math.abs(currentHeight - targetHeight) <= ELEVATOR_TOLERANCE;
         
         SmartDashboard.putNumber("L2Score/CurrentHeight", currentHeight);
@@ -68,23 +70,41 @@ public class L2ScoreCommand extends Command {
         
         return atTarget;
     }
+    
+    private boolean areBothAtTarget(double targetHeight, double targetAngle) {
+        boolean elevatorReady = isElevatorAtTarget(targetHeight);
+        boolean armReady = isArmAtTarget(targetAngle);
+        
+        SmartDashboard.putBoolean("L2Score/ElevatorReady", elevatorReady);
+        SmartDashboard.putBoolean("L2Score/ArmReady", armReady);
+        
+        return elevatorReady && armReady;
+    }
 
     @Override
     public void execute() {
         SmartDashboard.putString("L2Score/State", currentState.toString());
 
         switch (currentState) {
-            case ELEVATOR_UP:
-                if (isElevatorAtTarget()) {
-                    System.out.println("L2Score: Elevator at height, moving arm");
-                    currentState = ScoreState.ARM_TO_SCORE;
-                    m_arm.setAngle(SafetyConstants.L2[1]);
+            case ARM_START:
+                // Start arm movement and wait 0.25 seconds before starting elevator
+                if ((System.currentTimeMillis() - elevatorDelayTime) >= (ELEVATOR_START_DELAY * 1000)) {
+                    System.out.println("L2Score: Starting elevator after delay");
+                    currentState = ScoreState.ELEVATOR_DELAY;
+                    m_elevator.setHeight(SafetyConstants.L2[0]);
+                    currentState = ScoreState.MOVE_TO_SCORE;
                 }
                 break;
-
-            case ARM_TO_SCORE:
-                if (isArmAtTarget(SafetyConstants.L2[1])) {
-                    System.out.println("L2Score: Arm at scoring angle, starting coral");
+                
+            case ELEVATOR_DELAY:
+                // This state is just a placeholder - we transition immediately to MOVE_TO_SCORE
+                // after setting the elevator height
+                break;
+                
+            case MOVE_TO_SCORE:
+                // Wait for both arm and elevator to reach target positions
+                if (areBothAtTarget(SafetyConstants.L2[0], SafetyConstants.L2[1])) {
+                    System.out.println("L2Score: Arm and elevator at scoring position, starting coral");
                     currentState = ScoreState.SCORING;
                     m_coralIntake.reverse();
                     waitStartTime = System.currentTimeMillis();
@@ -92,25 +112,21 @@ public class L2ScoreCommand extends Command {
                 break;
 
             case SCORING:
+                // Wait for scoring time
                 if ((System.currentTimeMillis() - waitStartTime) >= (SCORING_TIME * 1000)) {
-                    System.out.println("L2Score: Moving arm back while continuing to score");
-                    currentState = ScoreState.ARM_BACK;
+                    System.out.println("L2Score: Scoring complete, returning to stowed position");
+                    m_coralIntake.stop();
+                    currentState = ScoreState.RETURN_TO_STOW;
+                    // Move both systems back simultaneously
+                    m_elevator.setHeight(SafetyConstants.STOWED[0]);
                     m_arm.setAngle(0);
                 }
                 break;
 
-            case ARM_BACK:
-                if (isArmAtTarget(0)) {
-                    System.out.println("L2Score: Arm back at zero, stopping coral and lowering elevator");
-                    m_coralIntake.stop();
-                    currentState = ScoreState.ELEVATOR_STOW;
-                    m_elevator.setHeight(SafetyConstants.STOWED[0]);
-                }
-                break;
-
-            case ELEVATOR_STOW:
-                if (Math.abs(m_elevator.getCurrentHeight() - SafetyConstants.STOWED[0]) <= ELEVATOR_TOLERANCE) {
-                    System.out.println("L2Score: At stowed position, complete");
+            case RETURN_TO_STOW:
+                // Wait for both systems to return to stowed positions
+                if (areBothAtTarget(SafetyConstants.STOWED[0], 0)) {
+                    System.out.println("L2Score: Returned to stowed position, command complete");
                     currentState = ScoreState.DONE;
                 }
                 break;

@@ -11,11 +11,13 @@ import frc.robot.subsystems.ElevatorSubsystem;
 public class L4ScoreCommand extends Command {
     private enum ScoreState {
         ELEVATOR_UP,           // Moving elevator to scoring height
-        ARM_TO_SCORE,         // Moving arm to scoring angle
-        SCORING,              // Running coral in reverse
-        ARM_BACK,             // Moving arm back to zero
-        ELEVATOR_STOW,        // Moving elevator to stowed position
-        DONE                  // Complete
+        ARM_TO_SCORE,          // Moving arm to scoring angle
+        SCORING,               // Running coral in reverse
+        ARM_BACK_PARTIAL,      // Start moving arm back to zero
+        ARM_RETURN_TO_L4,      // Return arm to L4 position
+        ARM_BACK_FINAL,        // Final movement of arm to zero
+        ELEVATOR_STOW,         // Moving elevator to stowed position
+        DONE                   // Complete
     }
 
     private final SafetySubsystem m_safetySystem;
@@ -28,7 +30,7 @@ public class L4ScoreCommand extends Command {
     // Position tolerances
     private static final double ELEVATOR_TOLERANCE = 0.5; // inches
     private static final double ARM_TOLERANCE = 2.0; // degrees
-    private static final double SCORING_TIME = .25; // seconds
+    private static final double SCORING_TIME = 0; // seconds
     
     public L4ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
                          ElevatorSubsystem elevator, ArmSubsystem arm) {
@@ -98,17 +100,35 @@ public class L4ScoreCommand extends Command {
             case SCORING:
                 // Wait for scoring time
                 if ((System.currentTimeMillis() - waitStartTime) >= (SCORING_TIME * 1000)) {
-                    System.out.println("L4Score: Moving arm back while continuing to score");
-                    currentState = ScoreState.ARM_BACK;
-                    m_arm.setAngle(0);
+                    System.out.println("L4Score: Starting arm back and forth sequence");
+                    currentState = ScoreState.ARM_BACK_PARTIAL;
+                    m_arm.setAngle(0); // Start moving arm toward 0
                 }
                 break;
 
-            case ARM_BACK:
-                // Wait for arm to return to zero
+            case ARM_BACK_PARTIAL:
+                // Wait for arm to start moving back to zero
                 if (isArmAtTarget(0)) {
-                    System.out.println("L4Score: Arm back at zero, stopping coral and lowering elevator");
-                    m_coralIntake.stop();  // Only stop coral once arm is at zero
+                    System.out.println("L4Score: Arm at zero, returning to L4 position");
+                    currentState = ScoreState.ARM_RETURN_TO_L4;
+                    m_arm.setAngle(SafetyConstants.L4[1]); // Return to L4 arm position
+                }
+                break;
+
+            case ARM_RETURN_TO_L4:
+                // Wait for arm to return to L4 position
+                if (isArmAtTarget(SafetyConstants.L4[1])) {
+                    System.out.println("L4Score: Arm back at L4, now moving to final zero position");
+                    currentState = ScoreState.ARM_BACK_FINAL;
+                    m_arm.setAngle(0); // Final movement to zero
+                }
+                break;
+
+            case ARM_BACK_FINAL:
+                // Wait for arm to go to zero final time
+                if (isArmAtTarget(0)) {
+                    System.out.println("L4Score: Arm at final zero position, stopping coral and lowering elevator");
+                    m_coralIntake.stop();  // Stop coral once arm is at zero
                     currentState = ScoreState.ELEVATOR_STOW;
                     m_elevator.setHeight(SafetyConstants.STOWED[0]);
                 }

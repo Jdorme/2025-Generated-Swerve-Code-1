@@ -101,15 +101,12 @@ public class RobotContainer {
         joystick.y().onTrue(new L4ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.x().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.b().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
-        joystick.povUp().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L4[0]));
-        joystick.povRight().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L3[0]));
-        joystick.povDown().onTrue(new ElevatorTest(m_elevatorSubsystem, Constants.SafetyConstants.L2[0]));
-        joystick.povLeft().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 14.5, -125));
+        joystick.a().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 14.0, 0));
 
-        joystick.rightBumper().whileTrue(new ArmCommand(m_ArmSubsystem, Constants.SafetyConstants.L2[1]));
-        joystick.rightBumper().onFalse(new ArmCommand(m_ArmSubsystem, 0));
+        // joystick.rightBumper().whileTrue(new ArmCommand(m_ArmSubsystem, Constants.SafetyConstants.L2[1]));
+        // joystick.rightBumper().onFalse(new ArmCommand(m_ArmSubsystem, 0));
 
-        joystick.a().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 11.0, 0));
+        
 
         joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
         joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));

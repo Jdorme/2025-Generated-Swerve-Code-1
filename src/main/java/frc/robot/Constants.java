@@ -46,10 +46,10 @@ public static final class ArmConstants {
 public static final class SafetyConstants{
         //------------Setpoints---------------
                 // (elevator height, arm angle)
-                public static final double[] STOWED = {11, 0.0};
-                public static final double[] L4 = {28.3,30};
-                public static final double[] L3 = {15.25, 25};
-                public static final double[] L2 = {11.0, 25};
+                public static final double[] STOWED = {14, 0.0};
+                public static final double[] L4 = {28.52,28};
+                public static final double[] L3 = {16.25, 25};
+                public static final double[] L2 = {10.0, 45};
                 public static final double[] PICKUP = {16.5, -125};
                 public static final double[] Start_Position = {0, 0};
 }
@@ -96,7 +96,7 @@ public static final class ReefAlignmentConstants {
 
 public static final class MotionMagicConstants {
     // Toggle between testing and competition speeds
-    public static final boolean TESTING_MODE = true;  // Set to false for competition
+    public static final boolean TESTING_MODE = false;  // Set to false for competition
 
     public static final class ElevatorMotionMagic {
         // Testing speeds (slower)
@@ -105,9 +105,9 @@ public static final class MotionMagicConstants {
         private static final double TEST_JERK = 200;           // 25% of competition speed
 
         // Competition speeds (faster)
-        private static final double COMP_CRUISE_VELOCITY = 120;
-        private static final double COMP_ACCELERATION = 200;
-        private static final double COMP_JERK = 1600;
+        private static final double COMP_CRUISE_VELOCITY = 140;
+        private static final double COMP_ACCELERATION = 75;
+        private static final double COMP_JERK = 1000;
 
         // Getter methods that return the appropriate speed based on mode
         public static double getCruiseVelocity() {
@@ -130,9 +130,9 @@ public static final class MotionMagicConstants {
         private static final double TEST_JERK = 300;           
 
         // Competition speeds (faster)
-        private static final double COMP_CRUISE_VELOCITY = 120;
-        private static final double COMP_ACCELERATION = 200;
-        private static final double COMP_JERK = 1600;
+        private static final double COMP_CRUISE_VELOCITY = 150;
+        private static final double COMP_ACCELERATION = 120;
+        private static final double COMP_JERK = 1000;
 
         // Getter methods that return the appropriate speed based on mode
         public static double getCruiseVelocity() {
