@@ -47,11 +47,28 @@ public static final class SafetyConstants{
         //------------Setpoints---------------
                 // (elevator height, arm angle)
                 public static final double[] STOWED = {14, 0.0};
-                public static final double[] L4 = {28.52,28};
+                public static final double[] L4 = {29.7,32};
                 public static final double[] L3 = {16.25, 25};
                 public static final double[] L2 = {10.0, 45};
                 public static final double[] PICKUP = {16.5, -125};
+                
+                public static final double[] L3_ALGAE = {16.25, -90};
+                public static final double[] L2_ALGAE = {13, -90};
+                public static final double[] GROUND_ALGAE = {10, -90};
+
                 public static final double[] Start_Position = {0, 0};
+}
+
+public static final class EndgameLiftConstants {
+    public static final int liftMotorTopID = 20;
+    public static final int liftMotorBottomID = 21;
+
+    // Motor configuration
+    public static final double CURRENT_LIMIT = 40.0; // Amps
+    
+    // Control constants
+    public static final double LIFT_UP_SPEED = 1; // 30% speed up
+    public static final double LIFT_DOWN_SPEED = -1; // 15% speed down
 }
 
 public static final class ReefAlignmentConstants {
@@ -130,9 +147,9 @@ public static final class MotionMagicConstants {
         private static final double TEST_JERK = 300;           
 
         // Competition speeds (faster)
-        private static final double COMP_CRUISE_VELOCITY = 150;
+        private static final double COMP_CRUISE_VELOCITY = 180;
         private static final double COMP_ACCELERATION = 120;
-        private static final double COMP_JERK = 1000;
+        private static final double COMP_JERK = 1600;
 
         // Getter methods that return the appropriate speed based on mode
         public static double getCruiseVelocity() {

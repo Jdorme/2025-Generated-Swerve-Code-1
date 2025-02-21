@@ -4,7 +4,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.hardware.CANrange;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -15,13 +14,14 @@ public class AlgaeIntake extends SubsystemBase {
     private static final double CURRENT_LIMIT = 40.0;
 
     // Control constants
-    private static final double INTAKE_SPEED = 0.7;
+    private static final double INTAKE_SPEED = 0.2;
     private static final double REVERSE_SPEED = -1.0;
     private static final double HOLD_SPEED = 0.05;
 
-    // Sensor thresholds
-    private static final double BALL_DETECTION_THRESHOLD = 0.2;
-    private static final double AMBIENT_THRESHOLD = 50.0;
+    // Current spike detection constants
+    private static final double CURRENT_SPIKE_THRESHOLD = 20.0; // Amps - adjust based on testing
+    private static final double CURRENT_SPIKE_DURATION_THRESHOLD = 0.1; // Seconds
+    private static final double CURRENT_DROP_THRESHOLD = 5.0; // Amps - for detecting when ball is lost
 
     // System state
     private enum IntakeState {
@@ -34,18 +34,17 @@ public class AlgaeIntake extends SubsystemBase {
 
     // Hardware
     private final TalonFX intakeMotor;
-    private final CANrange ballSensor;
     private final DutyCycleOut dutyCycleControl;
     
     // State tracking
     private IntakeState currentState = IntakeState.IDLE;
     private boolean isBallHeld = false;
-    private boolean wasLastStateBallPresent = false;
+    private double spikeStartTime = 0;
+    private boolean currentSpikeDetected = false;
     private String errorMessage = "";
 
     public AlgaeIntake() {
         intakeMotor = new TalonFX(Constants.AlgaeIntakeConstants.algaeIntakeMotorID);
-        ballSensor = new CANrange(Constants.AlgaeIntakeConstants.algaeIntakeCANrangeID);
         dutyCycleControl = new DutyCycleOut(0);
         
         try {
@@ -88,31 +87,50 @@ public class AlgaeIntake extends SubsystemBase {
     }
 
     private void updateBallDetectionState() {
-        boolean isBallPresent = checkBallPresence();
-        
-        if (isBallPresent && !wasLastStateBallPresent) {
-            isBallHeld = true;
-            currentState = IntakeState.HOLDING;
-            setIntakeSpeed(HOLD_SPEED);
-        } else if (!isBallPresent && wasLastStateBallPresent && isBallHeld) {
-            isBallHeld = false;
-            currentState = IntakeState.IDLE;
+        if (currentState == IntakeState.INTAKING) {
+            detectBallUsingCurrentSpike();
+        } else if (currentState == IntakeState.HOLDING) {
+            detectBallLoss();
         }
-        
-        wasLastStateBallPresent = isBallPresent;
     }
     
-    private boolean checkBallPresence() {
-        double distance = ballSensor.getDistance().getValueAsDouble();
-        double ambient = ballSensor.getAmbientSignal().getValueAsDouble();
+    private void detectBallUsingCurrentSpike() {
+        double currentDraw = intakeMotor.getSupplyCurrent().getValueAsDouble();
         
-        return distance < BALL_DETECTION_THRESHOLD && ambient < AMBIENT_THRESHOLD;
+        // Check for current spike when intaking
+        if (currentDraw > CURRENT_SPIKE_THRESHOLD && !currentSpikeDetected) {
+            currentSpikeDetected = true;
+            spikeStartTime = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
+        }
+        
+        // If current spike persists for the threshold duration, we've got a ball
+        if (currentSpikeDetected) {
+            double currentTime = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
+            if (currentTime - spikeStartTime >= CURRENT_SPIKE_DURATION_THRESHOLD) {
+                isBallHeld = true;
+                currentState = IntakeState.HOLDING;
+                setIntakeSpeed(HOLD_SPEED);
+                currentSpikeDetected = false;
+            }
+        }
+    }
+    
+    private void detectBallLoss() {
+        double currentDraw = intakeMotor.getSupplyCurrent().getValueAsDouble();
+        
+        // If we're holding but current drops significantly, we probably lost the ball
+        if (isBallHeld && currentDraw < CURRENT_DROP_THRESHOLD) {
+            isBallHeld = false;
+            currentState = IntakeState.IDLE;
+            setIntakeSpeed(0);
+        }
     }
     
     public void intake() {
         if (!isBallHeld && currentState != IntakeState.ERROR) {
             setIntakeSpeed(INTAKE_SPEED);
             currentState = IntakeState.INTAKING;
+            currentSpikeDetected = false;
         }
     }
     
@@ -121,6 +139,7 @@ public class AlgaeIntake extends SubsystemBase {
             setIntakeSpeed(REVERSE_SPEED);
             isBallHeld = false;
             currentState = IntakeState.REVERSING;
+            currentSpikeDetected = false;
         }
     }
     
@@ -128,6 +147,7 @@ public class AlgaeIntake extends SubsystemBase {
         if (currentState != IntakeState.ERROR) {
             setIntakeSpeed(0);
             currentState = IntakeState.IDLE;
+            currentSpikeDetected = false;
         }
     }
     
@@ -157,10 +177,8 @@ public class AlgaeIntake extends SubsystemBase {
     private void updateDashboard() {
         SmartDashboard.putBoolean("Algae/Has Ball", isBallHeld);
         SmartDashboard.putString("Algae/State", currentState.toString());
-        SmartDashboard.putNumber("Algae/Ball Distance", 
-            ballSensor.getDistance().getValueAsDouble());
-        SmartDashboard.putNumber("Algae/Ambient Noise", 
-            ballSensor.getAmbientSignal().getValueAsDouble());
+        SmartDashboard.putNumber("Algae/Current Draw", 
+            intakeMotor.getSupplyCurrent().getValueAsDouble());
         
         if (currentState == IntakeState.ERROR) {
             SmartDashboard.putString("Algae/Error", errorMessage);

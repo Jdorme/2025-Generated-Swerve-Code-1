@@ -21,23 +21,24 @@ import frc.robot.Commands.ElevatorTest;
 import frc.robot.Commands.ManualElevatorTest;
 import frc.robot.Commands.ReefAlignmentCommand;
 import frc.robot.Commands.StowOnIntakeCommand;
+import frc.robot.Commands.AlgaeCommands.L2AlgaeCommand;
+import frc.robot.Commands.CoralCommands.CoralIntakeCommand;
+import frc.robot.Commands.CoralCommands.L2ScoreCommand;
+import frc.robot.Commands.CoralCommands.L3ScoreCommand;
+import frc.robot.Commands.CoralCommands.L4ScoreCommand;
 import frc.robot.Commands.ArmElevatorToPositionCommand;
-import frc.robot.Commands.CoralIntakeCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.AlgaeIntake;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.CoralIntake;
 import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.EndgameLiftSubsystem;
 import frc.robot.subsystems.IntegratedMechanismSubsystem;
 import frc.robot.subsystems.SafetySubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.Commands.ArmCommand;
 import frc.robot.Commands.IntegratedMechanismCommand;
-import frc.robot.Commands.L2ScoreCommand;
-import frc.robot.Commands.L3ScoreCommand;
-//import frc.robot.Commands.L4ScoreCommand;
-import frc.robot.Commands.L4ScoreCommand;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
@@ -60,6 +61,7 @@ public class RobotContainer {
     private final VisionSubsystem m_visionSubsystem;
     private final SafetySubsystem m_safetySystem = new SafetySubsystem(m_elevatorSubsystem, m_ArmSubsystem, 
     m_coralIntake, m_algaeIntake);
+    private final EndgameLiftSubsystem m_endgameLift = new EndgameLiftSubsystem();
 
     private final SendableChooser<Command> autoChooser;
 
@@ -98,10 +100,20 @@ public class RobotContainer {
         );
 
         joystick.rightTrigger().whileTrue(new CoralIntakeCommand(m_coralIntake, m_safetySystem));
-        joystick.y().onTrue(new L4ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
-        joystick.x().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
-        joystick.b().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
-        joystick.a().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 14.0, 0));
+        joystick.rightTrigger().whileTrue(Commands.run(() -> m_algaeIntake.intake()));
+        joystick.leftTrigger().whileTrue(Commands.run(() -> m_algaeIntake.reverse()));
+
+//        joystick.x().whileTrue(new L2AlgaeCommand(m_algaeIntake, m_elevatorSubsystem,m_ArmSubsystem));
+
+        m_endgameLift.setDefaultCommand(Commands.run(() -> m_endgameLift.stop(), m_endgameLift));
+       // joystick.y().whileTrue(Commands.run(() -> m_endgameLift.liftUp(), m_endgameLift));
+       // joystick.a().whileTrue(Commands.run(() -> m_endgameLift.liftDown(), m_endgameLift));
+
+        // Using D-pad for scoring commands with direction constants
+        joystick.povUp().onTrue(new L4ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
+        joystick.povLeft().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
+        joystick.povDown().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
+        joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 14.0, 0));
 
         // joystick.rightBumper().whileTrue(new ArmCommand(m_ArmSubsystem, Constants.SafetyConstants.L2[1]));
         // joystick.rightBumper().onFalse(new ArmCommand(m_ArmSubsystem, 0));
@@ -116,6 +128,8 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
+
+
      // Add Reef Alignment Bindings
     // Align to the left side of the Reef AprilTag
     // joystick.x().onTrue(
