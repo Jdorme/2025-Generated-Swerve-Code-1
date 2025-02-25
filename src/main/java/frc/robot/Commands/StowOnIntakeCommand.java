@@ -11,6 +11,7 @@ public class StowOnIntakeCommand extends Command {
     private final AlgaeIntake algaeIntake;
     private final CoralIntake coralIntake;
     private boolean wasLastStateEmpty = true;
+    private boolean hasInitialized = false;
 
     public StowOnIntakeCommand(SafetySubsystem safety, AlgaeIntake algae, CoralIntake coral) {
         this.safetySystem = safety;
@@ -20,11 +21,28 @@ public class StowOnIntakeCommand extends Command {
     }
 
     @Override
+    public void initialize() {
+        // Always start in stowed position
+        safetySystem.setTargetPosition(
+            Constants.SafetyConstants.STOWED[0], 
+            Constants.SafetyConstants.STOWED[1]
+        );
+        hasInitialized = true;
+    }
+
+    @Override
     public void execute() {
         boolean hasObject = algaeIntake.hasBall() || coralIntake.hasCoral();
         
-        if (hasObject && wasLastStateEmpty) {
-            safetySystem.setTargetPosition(Constants.SafetyConstants.STOWED[0], Constants.SafetyConstants.STOWED[1]); // Stow position
+        // Move to stow position if:
+        // 1. We just got an object (state change from empty to full)
+        // 2. We have an object and haven't finished initial stow
+        if ((hasObject && wasLastStateEmpty) || 
+            (hasObject && !safetySystem.isAtTarget())) {
+            safetySystem.setTargetPosition(
+                Constants.SafetyConstants.STOWED[0], 
+                Constants.SafetyConstants.STOWED[1]
+            );
         }
         
         wasLastStateEmpty = !hasObject;

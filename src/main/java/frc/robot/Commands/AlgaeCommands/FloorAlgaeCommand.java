@@ -6,12 +6,12 @@ import frc.robot.Constants.SafetyConstants;
 import frc.robot.subsystems.SafetySubsystem;
 import frc.robot.subsystems.AlgaeIntake;
 
-public class L2AlgaeCommand extends Command {
+public class FloorAlgaeCommand extends Command {
     private final SafetySubsystem m_safetySystem;
     private final AlgaeIntake m_algaeIntake;
     private boolean wasLastStateBallPresent = false;
     
-    public L2AlgaeCommand(SafetySubsystem safetySystem, AlgaeIntake algaeIntake) {
+    public FloorAlgaeCommand(SafetySubsystem safetySystem, AlgaeIntake algaeIntake) {
         m_safetySystem = safetySystem;
         m_algaeIntake = algaeIntake;
         addRequirements(safetySystem, algaeIntake);
@@ -22,10 +22,10 @@ public class L2AlgaeCommand extends Command {
         // Reset state tracking
         wasLastStateBallPresent = false;
         
-        // Move to L2 algae position using safety system
+        // Move to ground position using safety system
         m_safetySystem.setTargetPosition(
-            SafetyConstants.L2_ALGAE[0], 
-            SafetyConstants.L2_ALGAE[1]
+            SafetyConstants.GROUND_ALGAE[0], 
+            SafetyConstants.GROUND_ALGAE[1]
         );
     }
 
@@ -40,36 +40,39 @@ public class L2AlgaeCommand extends Command {
         
         // If we just got a ball, output to console for debugging
         if (hasBall && !wasLastStateBallPresent) {
-            System.out.println("L2Algae: Ball acquired, holding position");
+            System.out.println("FloorAlgae: Ball acquired, holding position");
         }
         
         // Update last state
         wasLastStateBallPresent = hasBall;
 
         // Log state to SmartDashboard
-        SmartDashboard.putBoolean("L2Algae/AtPosition", m_safetySystem.isAtTarget());
-        SmartDashboard.putBoolean("L2Algae/HasBall", hasBall);
-        SmartDashboard.putString("L2Algae/State", hasBall ? "HOLDING" : "INTAKING");
+        SmartDashboard.putBoolean("FloorAlgae/AtPosition", m_safetySystem.isAtTarget());
+        SmartDashboard.putBoolean("FloorAlgae/HasBall", hasBall);
+        SmartDashboard.putString("FloorAlgae/State", hasBall ? "HOLDING" : "INTAKING");
     }
 
     @Override
     public void end(boolean interrupted) {
         if (interrupted) {
-            System.out.println("L2Algae: Command interrupted");
+            System.out.println("FloorAlgae: Command interrupted");
         }
         
         // If we don't have a ball, stop the intake
         if (!m_algaeIntake.hasBall()) {
-            System.out.println("L2Algae: No ball held, stopping intake");
+            System.out.println("FloorAlgae: No ball held, stopping intake");
             m_algaeIntake.stop();
         } else {
-            System.out.println("L2Algae: Ball held, maintaining hold mode");
+            System.out.println("FloorAlgae: Ball held, maintaining hold mode");
             // The AlgaeIntake will automatically maintain hold mode
         }
         
         // Return to stowed position
-        System.out.println("L2Algae: Returning to stowed position");
-
+        System.out.println("FloorAlgae: Returning to stowed position");
+        m_safetySystem.setTargetPosition(
+            SafetyConstants.STOWED[0], 
+            SafetyConstants.STOWED[1]
+        );
     }
 
     @Override

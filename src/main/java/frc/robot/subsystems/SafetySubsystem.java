@@ -4,7 +4,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class SafetySubsystem extends SubsystemBase {
     private static final double DANGER_ZONE_HEIGHT = 11; // inches
-    private static final double SAFE_HEIGHT = DANGER_ZONE_HEIGHT + 2.0; // inches
+    private static final double STANDARD_SAFE_HEIGHT = DANGER_ZONE_HEIGHT + 2.0; // inches
+    private static final double ALGAE_SAFE_HEIGHT = DANGER_ZONE_HEIGHT + 5.0; // Higher safe height for algae
+    
     private final ElevatorSubsystem elevator;
     private final ArmSubsystem arm;
     private final CoralIntake coralIntake;
@@ -15,12 +17,17 @@ public class SafetySubsystem extends SubsystemBase {
     private boolean isMovingDownThroughDangerZone = false;
 
     public SafetySubsystem(ElevatorSubsystem elevator, ArmSubsystem arm, 
-    CoralIntake coral, AlgaeIntake algae) {
-this.elevator = elevator;
-this.arm = arm;
-this.coralIntake = coral;
-this.algaeIntake = algae;
-}
+                          CoralIntake coral, AlgaeIntake algae) {
+        this.elevator = elevator;
+        this.arm = arm;
+        this.coralIntake = coral;
+        this.algaeIntake = algae;
+    }
+
+    private double getCurrentSafeHeight() {
+        // Use higher safe height if holding algae
+        return algaeIntake.hasBall() ? ALGAE_SAFE_HEIGHT : STANDARD_SAFE_HEIGHT;
+    }
 
     public void setTargetPosition(double heightInches, double armAngleDegrees) {
         double currentHeight = elevator.getCurrentHeight();
@@ -41,14 +48,15 @@ this.algaeIntake = algae;
         }
         // If we're already in the danger zone
         else if (isInDangerZone(currentHeight)) {
-            if (targetElevatorHeight >= SAFE_HEIGHT) {
+            double safeHeight = getCurrentSafeHeight();
+            if (targetElevatorHeight >= safeHeight) {
                 // When moving up out of danger zone:
                 // 1. First move elevator to safe height
                 // 2. Only then allow arm movement
                 isMovingDownThroughDangerZone = false;
-                elevator.setHeight(SAFE_HEIGHT);
+                elevator.setHeight(safeHeight);
                 
-                if (elevator.getCurrentHeight() >= SAFE_HEIGHT) {
+                if (elevator.getCurrentHeight() >= safeHeight) {
                     moveToTargets();
                 }
             } else if (isMovingDownThroughDangerZone && isArmSafe()) {
@@ -56,7 +64,7 @@ this.algaeIntake = algae;
                 moveToTargets();
             } else {
                 // Otherwise, maintain safe height
-                elevator.setHeight(SAFE_HEIGHT);
+                elevator.setHeight(safeHeight);
             }
         }
         // Outside danger zone, normal operation
@@ -90,5 +98,7 @@ this.algaeIntake = algae;
         SmartDashboard.putBoolean("Safety/In Danger Zone", isInDangerZone(elevator.getCurrentHeight()));
         SmartDashboard.putBoolean("Safety/At Target", isAtTarget());
         SmartDashboard.putBoolean("Safety/Moving Down Through Danger", isMovingDownThroughDangerZone);
+        SmartDashboard.putNumber("Safety/Current Safe Height", getCurrentSafeHeight());
+        SmartDashboard.putBoolean("Safety/Has Algae", algaeIntake.hasBall());
     }
 }

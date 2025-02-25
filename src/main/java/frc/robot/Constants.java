@@ -6,7 +6,6 @@ package frc.robot;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
-import frc.robot.subsystems.IntegratedMechanismSubsystem.Position;
 
 /** Add your docs here. */
 public class Constants {
@@ -47,14 +46,19 @@ public static final class SafetyConstants{
         //------------Setpoints---------------
                 // (elevator height, arm angle)
                 public static final double[] STOWED = {14, 0.0};
-                public static final double[] L4 = {29.7,32};
-                public static final double[] L3 = {16.25, 25};
+                public static final double[] L4 = {29.7,38};
+                public static final double[] L3 = {16.25, 30};
                 public static final double[] L2 = {10.0, 45};
-                public static final double[] PICKUP = {16.5, -125};
+                public static final double[] PICKUP = {17.5, -125};
                 
-                public static final double[] L3_ALGAE = {16.25, -90};
+                public static final double[] L3_ALGAE = {16.5, -125};
                 public static final double[] L2_ALGAE = {13, -90};
                 public static final double[] GROUND_ALGAE = {10, -90};
+                public static final double[] PROCESSOR_ALGAE = {0, -0};
+                public static final double[] NET_ALGAE = {0, 0};
+
+                public static final double[] CLIMB_POSITION = {0, 0};
+
 
                 public static final double[] Start_Position = {0, 0};
 }
@@ -122,9 +126,9 @@ public static final class MotionMagicConstants {
         private static final double TEST_JERK = 200;           // 25% of competition speed
 
         // Competition speeds (faster)
-        private static final double COMP_CRUISE_VELOCITY = 140;
-        private static final double COMP_ACCELERATION = 75;
-        private static final double COMP_JERK = 1000;
+        private static final double COMP_CRUISE_VELOCITY = 220;
+        private static final double COMP_ACCELERATION = 140;
+        private static final double COMP_JERK = 1800;
 
         // Getter methods that return the appropriate speed based on mode
         public static double getCruiseVelocity() {
@@ -147,9 +151,9 @@ public static final class MotionMagicConstants {
         private static final double TEST_JERK = 300;           
 
         // Competition speeds (faster)
-        private static final double COMP_CRUISE_VELOCITY = 180;
-        private static final double COMP_ACCELERATION = 120;
-        private static final double COMP_JERK = 1600;
+        private static final double COMP_CRUISE_VELOCITY = 220;
+        private static final double COMP_ACCELERATION = 150;
+        private static final double COMP_JERK = 1900;
 
         // Getter methods that return the appropriate speed based on mode
         public static double getCruiseVelocity() {

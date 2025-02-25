@@ -17,12 +17,12 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.ArmConstants;
+import frc.robot.Constants.SafetyConstants;
 import frc.robot.Commands.ElevatorTest;
-import frc.robot.Commands.ManualElevatorTest;
 import frc.robot.Commands.ReefAlignmentCommand;
 import frc.robot.Commands.StowOnIntakeCommand;
 import frc.robot.Commands.AlgaeCommands.L2AlgaeCommand;
-import frc.robot.Commands.CoralCommands.CoralIntakeCommand;
+import frc.robot.Commands.CoralCommands.CoralIntakeL2AlgaeCommand;
 import frc.robot.Commands.CoralCommands.L2ScoreCommand;
 import frc.robot.Commands.CoralCommands.L3ScoreCommand;
 import frc.robot.Commands.CoralCommands.L4ScoreCommand;
@@ -33,16 +33,14 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.CoralIntake;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.EndgameLiftSubsystem;
-import frc.robot.subsystems.IntegratedMechanismSubsystem;
 import frc.robot.subsystems.SafetySubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.Commands.ArmCommand;
-import frc.robot.Commands.IntegratedMechanismCommand;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
+    private double MaxAngularRate = RotationsPerSecond.of(0.65).in(RadiansPerSecond);
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1)
@@ -78,11 +76,11 @@ public class RobotContainer {
     private void configureBindings() {
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed)
+                drive.withVelocityX(-joystick.getLeftY() * (MaxSpeed/1.5)) //Divide by 4 to reduce max speed
+                    .withVelocityY(-joystick.getLeftX() * (MaxSpeed/1.5))
                     .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
             )
-        );
+       );
      
         m_algaeIntake.setDefaultCommand(
             new RunCommand(
@@ -99,35 +97,51 @@ public class RobotContainer {
             new StowOnIntakeCommand(m_safetySystem, m_algaeIntake, m_coralIntake)
         );
 
-        joystick.rightTrigger().whileTrue(new CoralIntakeCommand(m_coralIntake, m_safetySystem));
+        joystick.rightTrigger().whileTrue(new CoralIntakeL2AlgaeCommand(m_coralIntake, m_safetySystem));
         joystick.rightTrigger().whileTrue(Commands.run(() -> m_algaeIntake.intake()));
         joystick.leftTrigger().whileTrue(Commands.run(() -> m_algaeIntake.reverse()));
 
 //        joystick.x().whileTrue(new L2AlgaeCommand(m_algaeIntake, m_elevatorSubsystem,m_ArmSubsystem));
 
         m_endgameLift.setDefaultCommand(Commands.run(() -> m_endgameLift.stop(), m_endgameLift));
-       // joystick.y().whileTrue(Commands.run(() -> m_endgameLift.liftUp(), m_endgameLift));
-       // joystick.a().whileTrue(Commands.run(() -> m_endgameLift.liftDown(), m_endgameLift));
+        joystick.rightBumper().and(joystick.povUp()).whileTrue(Commands.run(() -> m_endgameLift.liftUp(), m_endgameLift));
+        joystick.rightBumper().and(joystick.povDown()).whileTrue(Commands.run(() -> m_endgameLift.liftDown(), m_endgameLift));
 
         // Using D-pad for scoring commands with direction constants
         joystick.povUp().onTrue(new L4ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povLeft().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povDown().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 14.0, 0));
-
-        // joystick.rightBumper().whileTrue(new ArmCommand(m_ArmSubsystem, Constants.SafetyConstants.L2[1]));
-        // joystick.rightBumper().onFalse(new ArmCommand(m_ArmSubsystem, 0));
-
         
+        joystick.back().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 
+        SafetyConstants.CLIMB_POSITION[0], 
+        SafetyConstants.CLIMB_POSITION[1]));
 
-        joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+
+        // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+        // joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+        // joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+        // joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
+
+        joystick.x().whileTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
+
+        
+        // Button to move to processor position
+        joystick.a().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 
+            SafetyConstants.PROCESSOR_ALGAE[0], 
+            SafetyConstants.PROCESSOR_ALGAE[1]));
+        
+        // Button to move to net position
+        joystick.b().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 
+            SafetyConstants.NET_ALGAE[0], 
+            SafetyConstants.NET_ALGAE[1]));
+
+        // Button to eject ball when in either position
+
 
 
      // Add Reef Alignment Bindings

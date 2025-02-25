@@ -28,7 +28,7 @@ public class L4ScoreCommand extends Command {
     // Position tolerances
     private static final double ELEVATOR_TOLERANCE = 0.5; // inches
     private static final double ARM_TOLERANCE = 2.0; // degrees
-    private static final double SCORING_TIME = .25; // seconds
+    private static final double SCORING_TIME = .0; // seconds
     
     public L4ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
                          ElevatorSubsystem elevator, ArmSubsystem arm) {
@@ -100,7 +100,7 @@ public class L4ScoreCommand extends Command {
                 if ((System.currentTimeMillis() - waitStartTime) >= (SCORING_TIME * 1000)) {
                     System.out.println("L4Score: Scoring complete, moving arm back");
                     currentState = ScoreState.ARM_BACK;
-                    m_coralIntake.stop();
+                    // No longer stopping the coral intake here
                     m_arm.setAngle(0);
                 }
                 break;
@@ -108,7 +108,9 @@ public class L4ScoreCommand extends Command {
             case ARM_BACK:
                 // Wait for arm to return to zero
                 if (isArmAtTarget(0)) {
-                    System.out.println("L4Score: Arm at zero, lowering elevator");
+                    System.out.println("L4Score: Arm at zero, stopping intake and lowering elevator");
+                    // Stop the coral intake only after arm is back at zero
+                    m_coralIntake.stop();
                     currentState = ScoreState.ELEVATOR_STOW;
                     m_elevator.setHeight(SafetyConstants.STOWED[0]);
                 }

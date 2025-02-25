@@ -5,12 +5,12 @@ import frc.robot.subsystems.CoralIntake;
 import frc.robot.subsystems.SafetySubsystem;
 import frc.robot.Constants;
 
-public class CoralIntakeCommand extends Command {
+public class CoralIntakeL2AlgaeCommand extends Command {
     private final CoralIntake coralIntake;
     private final SafetySubsystem safetySubsystem;
     private boolean hasStartedIntake = false;
 
-    public CoralIntakeCommand(CoralIntake coralIntake, SafetySubsystem safetySubsystem) {
+    public CoralIntakeL2AlgaeCommand(CoralIntake coralIntake, SafetySubsystem safetySubsystem) {
         this.coralIntake = coralIntake;
         this.safetySubsystem = safetySubsystem;
         addRequirements(coralIntake);
