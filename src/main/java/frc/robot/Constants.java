@@ -46,18 +46,18 @@ public static final class SafetyConstants{
         //------------Setpoints---------------
                 // (elevator height, arm angle)
                 public static final double[] STOWED = {14, 0.0};
-                public static final double[] L4 = {29.7,38};
-                public static final double[] L3 = {16.25, 30};
+                public static final double[] L4 = {29.7,40};
+                public static final double[] L3 = {16.25, 34};
                 public static final double[] L2 = {10.0, 45};
                 public static final double[] PICKUP = {17.5, -125};
                 
-                public static final double[] L3_ALGAE = {16.5, -125};
-                public static final double[] L2_ALGAE = {13, -90};
-                public static final double[] GROUND_ALGAE = {10, -90};
-                public static final double[] PROCESSOR_ALGAE = {0, -0};
+                public static final double[] L3_ALGAE = {20.5, -110};
+                public static final double[] L2_ALGAE = {17, -80};
+                public static final double[] GROUND_ALGAE = {8, -75};
+                public static final double[] PROCESSOR_ALGAE = {8, -90};
                 public static final double[] NET_ALGAE = {0, 0};
 
-                public static final double[] CLIMB_POSITION = {0, 0};
+                public static final double[] CLIMB_POSITION = {0, 90};
 
 
                 public static final double[] Start_Position = {0, 0};
@@ -126,9 +126,9 @@ public static final class MotionMagicConstants {
         private static final double TEST_JERK = 200;           // 25% of competition speed
 
         // Competition speeds (faster)
-        private static final double COMP_CRUISE_VELOCITY = 220;
-        private static final double COMP_ACCELERATION = 140;
-        private static final double COMP_JERK = 1800;
+        private static final double COMP_CRUISE_VELOCITY = 120;
+        private static final double COMP_ACCELERATION = 80;
+        private static final double COMP_JERK = 1000;
 
         // Getter methods that return the appropriate speed based on mode
         public static double getCruiseVelocity() {

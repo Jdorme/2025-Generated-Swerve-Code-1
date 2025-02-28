@@ -28,7 +28,7 @@ public class L4ScoreCommand extends Command {
     // Position tolerances
     private static final double ELEVATOR_TOLERANCE = 0.5; // inches
     private static final double ARM_TOLERANCE = 2.0; // degrees
-    private static final double SCORING_TIME = .0; // seconds
+    private static final double SCORING_TIME = .1250; // seconds
     
     public L4ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
                          ElevatorSubsystem elevator, ArmSubsystem arm) {

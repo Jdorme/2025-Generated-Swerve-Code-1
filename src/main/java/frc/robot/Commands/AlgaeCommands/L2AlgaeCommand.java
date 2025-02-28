@@ -27,6 +27,8 @@ public class L2AlgaeCommand extends Command {
             SafetyConstants.L2_ALGAE[0], 
             SafetyConstants.L2_ALGAE[1]
         );
+        
+        System.out.println("L2Algae: Moving to position to intake algae");
     }
 
     @Override
@@ -40,7 +42,7 @@ public class L2AlgaeCommand extends Command {
         
         // If we just got a ball, output to console for debugging
         if (hasBall && !wasLastStateBallPresent) {
-            System.out.println("L2Algae: Ball acquired, holding position");
+            System.out.println("L2Algae: Ball acquired, maintaining position");
         }
         
         // Update last state
@@ -67,13 +69,15 @@ public class L2AlgaeCommand extends Command {
             // The AlgaeIntake will automatically maintain hold mode
         }
         
-        // Return to stowed position
-        System.out.println("L2Algae: Returning to stowed position");
-
+        // No longer returning to stowed position automatically
+        // This is the key change - we don't move back to stowed until another command requires it
+        System.out.println("L2Algae: Maintaining current position until next command");
     }
 
     @Override
     public boolean isFinished() {
-        return false;  // Runs until button is released
+        // Never finish on its own - will run until interrupted by another command
+        // This means it won't stop when the button is released
+        return false;
     }
 }

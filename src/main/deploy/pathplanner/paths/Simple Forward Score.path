@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 8.745750000001044,
-        "y": 6.22849999999489
+        "x": 7.576229508196722,
+        "y": 4.09093237704918
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.995000000001044,
-        "y": 6.3162499999948905
+        "x": 7.326229508196722,
+        "y": 4.09093237704918
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.3357500000010425,
-        "y": 7.32049999999489
+        "x": 5.68217213114754,
+        "y": 4.09093237704918
       },
       "prevControl": {
-        "x": 1.585750000001042,
-        "y": 7.32049999999489
+        "x": 6.141600104964624,
+        "y": 4.09093237704918
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 125.31121343963335
+    "rotation": -90.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Waco",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": -90.0
   },
   "useDefaultConstraints": true
 }

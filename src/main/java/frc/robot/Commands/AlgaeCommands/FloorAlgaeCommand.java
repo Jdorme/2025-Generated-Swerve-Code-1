@@ -27,6 +27,8 @@ public class FloorAlgaeCommand extends Command {
             SafetyConstants.GROUND_ALGAE[0], 
             SafetyConstants.GROUND_ALGAE[1]
         );
+        
+        System.out.println("FloorAlgae: Moving to position to intake algae");
     }
 
     @Override
@@ -40,7 +42,7 @@ public class FloorAlgaeCommand extends Command {
         
         // If we just got a ball, output to console for debugging
         if (hasBall && !wasLastStateBallPresent) {
-            System.out.println("FloorAlgae: Ball acquired, holding position");
+            System.out.println("FloorAlgae: Ball acquired, maintaining position");
         }
         
         // Update last state
@@ -67,16 +69,15 @@ public class FloorAlgaeCommand extends Command {
             // The AlgaeIntake will automatically maintain hold mode
         }
         
-        // Return to stowed position
-        System.out.println("FloorAlgae: Returning to stowed position");
-        m_safetySystem.setTargetPosition(
-            SafetyConstants.STOWED[0], 
-            SafetyConstants.STOWED[1]
-        );
+        // No longer returning to stowed position automatically
+        // This is the key change - we don't move back to stowed until another command requires it
+        System.out.println("FloorAlgae: Maintaining current position until next command");
     }
 
     @Override
     public boolean isFinished() {
-        return false;  // Runs until button is released
+        // Never finish on its own - will run until interrupted by another command
+        // This means it won't stop when the button is released
+        return false;
     }
 }

@@ -15,8 +15,9 @@ public class CoralIntake extends SubsystemBase {
     private static final double CURRENT_LIMIT = 40.0;
 
     // Control constants
-    private static final double INTAKE_SPEED = .5;
+    private static final double INTAKE_SPEED = .82; //.75
     private static final double HOLD_SPEED = 0;
+    private static final double HOLD_BACK_SPEED = 1;  // Speed for holding coral at the back
     private static final double REVERSE_SPEED = -.675;
 
     // Sensor thresholds
@@ -28,6 +29,7 @@ public class CoralIntake extends SubsystemBase {
         IDLE,
         INTAKING,
         HOLDING,
+        HOLDING_BACK,  // New state for holding the coral at the back
         REVERSING,
         ERROR
     }
@@ -42,7 +44,8 @@ public class CoralIntake extends SubsystemBase {
     private boolean isCoralHeld = false;
     private boolean wasLastStateCoralPresent = false;
     private String errorMessage = "";
-    private boolean manualControl = false;  // New flag for manual control
+    private boolean manualControl = false;  // Flag for manual control
+    private boolean isHoldingBack = false;  // New flag for holding back state
 
     public CoralIntake() {
         intakeMotor = new TalonFX(Constants.CoralIntakeConstants.coralIntakeMotorID);
@@ -62,7 +65,7 @@ public class CoralIntake extends SubsystemBase {
         motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         motorConfig.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
         intakeMotor.getConfigurator().apply(motorConfig);
-        intakeMotor.setNeutralMode(NeutralModeValue.Brake);
+        intakeMotor.setNeutralMode(NeutralModeValue.Coast);
     }
     
     @Override
@@ -84,10 +87,14 @@ public class CoralIntake extends SubsystemBase {
         
         if (isCoralPresent && !wasLastStateCoralPresent) {
             isCoralHeld = true;
-            currentState = IntakeState.HOLDING;
-            setIntakeSpeed(HOLD_SPEED);
+            // If we're not already holding back, just regular hold
+            if (!isHoldingBack) {
+                currentState = IntakeState.HOLDING;
+                setIntakeSpeed(HOLD_SPEED);
+            }
         } else if (!isCoralPresent && wasLastStateCoralPresent && isCoralHeld && !manualControl) {
             isCoralHeld = false;
+            isHoldingBack = false;
             currentState = IntakeState.IDLE;
         }
         
@@ -124,6 +131,31 @@ public class CoralIntake extends SubsystemBase {
         }
     }
     
+    /**
+     * New method to hold the coral at the back position.
+     * This applies a gentle force to push the coral to the back of the mechanism.
+     */
+    public void holdBack() {
+        if (currentState != IntakeState.ERROR) {
+            manualControl = true;  // Enable manual control
+            isHoldingBack = true;
+            setIntakeSpeed(HOLD_BACK_SPEED);
+            currentState = IntakeState.HOLDING_BACK;
+        }
+    }
+    
+    /**
+     * Returns to normal holding state.
+     */
+    public void normalHold() {
+        if (currentState != IntakeState.ERROR && isCoralHeld) {
+            manualControl = false;  // Return to automatic control
+            isHoldingBack = false;
+            setIntakeSpeed(HOLD_SPEED);
+            currentState = IntakeState.HOLDING;
+        }
+    }
+    
     private void setIntakeSpeed(double speed) {
         try {
             intakeMotor.setControl(dutyCycleControl.withOutput(speed));
@@ -146,6 +178,10 @@ public class CoralIntake extends SubsystemBase {
         return isCoralHeld;
     }
     
+    public boolean isHoldingBack() {
+        return isHoldingBack;
+    }
+    
     private void updateDashboard() {
         SmartDashboard.putBoolean("Coral/Has Coral", isCoralHeld);
         SmartDashboard.putString("Coral/State", currentState.toString());
@@ -154,6 +190,7 @@ public class CoralIntake extends SubsystemBase {
         SmartDashboard.putNumber("Coral/Ambient Noise", 
             coralSensor.getAmbientSignal().getValueAsDouble());
         SmartDashboard.putBoolean("Coral/Manual Control", manualControl);
+        SmartDashboard.putBoolean("Coral/Holding Back", isHoldingBack);
         
         if (currentState == IntakeState.ERROR) {
             SmartDashboard.putString("Coral/Error", errorMessage);

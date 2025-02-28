@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -21,12 +22,16 @@ import frc.robot.Constants.SafetyConstants;
 import frc.robot.Commands.ElevatorTest;
 import frc.robot.Commands.ReefAlignmentCommand;
 import frc.robot.Commands.StowOnIntakeCommand;
+import frc.robot.Commands.AlgaeCommands.FloorIntakePositionCommand;
 import frc.robot.Commands.AlgaeCommands.L2AlgaeCommand;
+import frc.robot.Commands.AlgaeCommands.L3AlgaeCommand;
+import frc.robot.Commands.AlgaeCommands.ProcessorCommand;
 import frc.robot.Commands.CoralCommands.CoralIntakeL2AlgaeCommand;
 import frc.robot.Commands.CoralCommands.L2ScoreCommand;
 import frc.robot.Commands.CoralCommands.L3ScoreCommand;
 import frc.robot.Commands.CoralCommands.L4ScoreCommand;
 import frc.robot.Commands.ArmElevatorToPositionCommand;
+import frc.robot.Commands.AutoCommandFactory;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.AlgaeIntake;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -36,6 +41,7 @@ import frc.robot.subsystems.EndgameLiftSubsystem;
 import frc.robot.subsystems.SafetySubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.Commands.ArmClimbPositionCommand;
 import frc.robot.Commands.ArmCommand;
 
 public class RobotContainer {
@@ -66,21 +72,41 @@ public class RobotContainer {
     public RobotContainer() {
         m_visionSubsystem = new VisionSubsystem(drivetrain);
         
+        // Register named commands for PathPlanner BEFORE building the auto chooser
+        registerAutonomousCommands();
+        
+        // Build the auto chooser
         autoChooser = AutoBuilder.buildAutoChooser("New Auto");
         SmartDashboard.putData("Auto Mode", autoChooser);
 
         configureBindings();
+    }
+    
+    /**
+     * Register commands that can be used in autonomous routines.
+     * This method registers all our commands with PathPlanner's named command system.
+     */
+    private void registerAutonomousCommands() {
+        // Register commands using the AutoCommandFactory
+        AutoCommandFactory.registerNamedCommands(
+            m_safetySystem,
+            m_algaeIntake,
+            m_coralIntake,
+            m_elevatorSubsystem,
+            m_ArmSubsystem
+        );
         
+        // Add any additional autonomous-specific commands here if needed
     }
 
     private void configureBindings() {
-        drivetrain.setDefaultCommand(
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * (MaxSpeed/1.5)) //Divide by 4 to reduce max speed
-                    .withVelocityY(-joystick.getLeftX() * (MaxSpeed/1.5))
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
-            )
-       );
+    //     drivetrain.setDefaultCommand(
+    //         drivetrain.applyRequest(() ->
+    //             drive.withVelocityX(-joystick.getLeftY() * (MaxSpeed/1.5)) //Divide by 4 to reduce max speed
+    //                 .withVelocityY(-joystick.getLeftX() * (MaxSpeed/1.5))
+    //                 .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
+    //         )
+    //    );
      
         m_algaeIntake.setDefaultCommand(
             new RunCommand(
@@ -98,14 +124,14 @@ public class RobotContainer {
         );
 
         joystick.rightTrigger().whileTrue(new CoralIntakeL2AlgaeCommand(m_coralIntake, m_safetySystem));
-        joystick.rightTrigger().whileTrue(Commands.run(() -> m_algaeIntake.intake()));
+        //joystick.rightTrigger().whileTrue(Commands.run(() -> m_algaeIntake.intake()));
         joystick.leftTrigger().whileTrue(Commands.run(() -> m_algaeIntake.reverse()));
 
 //        joystick.x().whileTrue(new L2AlgaeCommand(m_algaeIntake, m_elevatorSubsystem,m_ArmSubsystem));
 
         m_endgameLift.setDefaultCommand(Commands.run(() -> m_endgameLift.stop(), m_endgameLift));
-        joystick.rightBumper().and(joystick.povUp()).whileTrue(Commands.run(() -> m_endgameLift.liftUp(), m_endgameLift));
-        joystick.rightBumper().and(joystick.povDown()).whileTrue(Commands.run(() -> m_endgameLift.liftDown(), m_endgameLift));
+        joystick.rightBumper().whileTrue(Commands.run(() -> m_endgameLift.liftUp(), m_endgameLift));
+        joystick.leftBumper().whileTrue(Commands.run(() -> m_endgameLift.liftDown(), m_endgameLift));
 
         // Using D-pad for scoring commands with direction constants
         joystick.povUp().onTrue(new L4ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
@@ -113,62 +139,56 @@ public class RobotContainer {
         joystick.povDown().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 14.0, 0));
         
-        joystick.back().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 
-        SafetyConstants.CLIMB_POSITION[0], 
-        SafetyConstants.CLIMB_POSITION[1]));
+        joystick.back().onTrue(new ArmClimbPositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
 
 
         // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
         // joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
         // joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        // joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        // joystick.start().and(jo\ystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        joystick.start().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
 
-        joystick.x().whileTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
-
+        joystick.x().onTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
+        joystick.y().onTrue(new L3AlgaeCommand(m_safetySystem, m_algaeIntake));
         
         // Button to move to processor position
-        joystick.a().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 
-            SafetyConstants.PROCESSOR_ALGAE[0], 
-            SafetyConstants.PROCESSOR_ALGAE[1]));
+        joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
+
         
         // Button to move to net position
         joystick.b().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 
             SafetyConstants.NET_ALGAE[0], 
             SafetyConstants.NET_ALGAE[1]));
 
-        // Button to eject ball when in either position
+       // joystick.start().onTrue(new FloorIntakePositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
 
 
+        // Add Reef Alignment Bindings
+        // Align to the left side of the Reef AprilTag
+        // joystick.x().onTrue(
+        //     Commands.runOnce(() -> 
+        //         new ReefAlignmentCommand(
+        //             drivetrain, 
+        //             m_visionSubsystem, 
+        //             ReefAlignmentCommand.AlignmentSide.LEFT
+        //         ).schedule()
+        //     )
+        // );
 
-     // Add Reef Alignment Bindings
-    // Align to the left side of the Reef AprilTag
-    // joystick.x().onTrue(
-    //     Commands.runOnce(() -> 
-    //         new ReefAlignmentCommand(
-    //             drivetrain, 
-    //             m_visionSubsystem, 
-    //             ReefAlignmentCommand.AlignmentSide.LEFT
-    //         ).schedule()
-    //     )
-    // );
-
-    // // Align to the right side of the Reef AprilTag
-    // joystick.b().onTrue(
-    //     Commands.runOnce(() -> 
-    //         new ReefAlignmentCommand(
-    //             drivetrain, 
-    //             m_visionSubsystem, 
-    //             ReefAlignmentCommand.AlignmentSide.RIGHT
-    //         ).schedule()
-    //     )
-    // );
+        // // Align to the right side of the Reef AprilTag
+        // joystick.b().onTrue(
+        //     Commands.runOnce(() -> 
+        //         new ReefAlignmentCommand(
+        //             drivetrain, 
+        //             m_visionSubsystem, 
+        //             ReefAlignmentCommand.AlignmentSide.RIGHT
+        //         ).schedule()
+        //     )
+        // );
     }
-
-
 
     public Command getAutonomousCommand() {
         return autoChooser.getSelected();

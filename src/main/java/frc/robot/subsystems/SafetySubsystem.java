@@ -15,6 +15,9 @@ public class SafetySubsystem extends SubsystemBase {
     private double targetElevatorHeight = 0.0;
     private double targetArmAngle = 0.0;
     private boolean isMovingDownThroughDangerZone = false;
+    private boolean isMovingUpFromDangerZone = false;
+    private boolean isInTransition = false;
+    private boolean overrideEnabled = false;
 
     public SafetySubsystem(ElevatorSubsystem elevator, ArmSubsystem arm, 
                           CoralIntake coral, AlgaeIntake algae) {
@@ -33,50 +36,68 @@ public class SafetySubsystem extends SubsystemBase {
         double currentHeight = elevator.getCurrentHeight();
         targetElevatorHeight = heightInches;
         targetArmAngle = armAngleDegrees;
+        boolean currentlyInDangerZone = isInDangerZone(currentHeight);
+        double safeHeight = getCurrentSafeHeight();
 
-        // Check if we're starting a downward movement through the danger zone
-        if (currentHeight > DANGER_ZONE_HEIGHT && targetElevatorHeight <= DANGER_ZONE_HEIGHT) {
-            // Only allow downward movement if arm is in safe position
-            // Move arm to safe position if needed
+        // Case 1: Starting ABOVE danger zone, moving DOWN through it
+        if (!currentlyInDangerZone && targetElevatorHeight <= DANGER_ZONE_HEIGHT) {
+            // First ensure arm is in safe position
             arm.setAngle(targetArmAngle);
             
-            // Only proceed with elevator movement if arm is safe
-            if (isArmSafe()) {
+            // Only proceed with downward movement if arm is at target
+            if (arm.isAtTarget()) {
                 isMovingDownThroughDangerZone = true;
-                moveToTargets();
-            }
-        }
-        // If we're already in the danger zone
-        else if (isInDangerZone(currentHeight)) {
-            double safeHeight = getCurrentSafeHeight();
-            if (targetElevatorHeight >= safeHeight) {
-                // When moving up out of danger zone:
-                // 1. First move elevator to safe height
-                // 2. Only then allow arm movement
-                isMovingDownThroughDangerZone = false;
-                elevator.setHeight(safeHeight);
-                
-                if (elevator.getCurrentHeight() >= safeHeight) {
-                    moveToTargets();
-                }
-            } else if (isMovingDownThroughDangerZone && isArmSafe()) {
-                // Continue downward movement if it was intentional and arm is safe
+                isMovingUpFromDangerZone = false;
+                isInTransition = false;
                 moveToTargets();
             } else {
-                // Otherwise, maintain safe height
-                elevator.setHeight(safeHeight);
+                // If arm isn't at target yet, don't move elevator down
+                isInTransition = true;
             }
-        }
-        // Outside danger zone, normal operation
+        } 
+        // Case 2: Currently IN danger zone
+        else if (currentlyInDangerZone) {
+            // Case 2A: Want to move UP out of danger zone
+            if (targetElevatorHeight >= safeHeight) {
+                isMovingUpFromDangerZone = true;
+                isMovingDownThroughDangerZone = false;
+                isInTransition = false;
+                
+                // First move elevator up to safe height
+                elevator.setHeight(safeHeight);
+                
+                // Only move arm once elevator is at safe height
+                if (elevator.getCurrentHeight() >= safeHeight - 0.5) { // Allow some tolerance
+                    arm.setAngle(targetArmAngle);
+                    
+                    // Once arm is at target, complete the movement to final position
+                    if (arm.isAtTarget() && Math.abs(elevator.getCurrentHeight() - safeHeight) < 0.5) {
+                        elevator.setHeight(targetElevatorHeight);
+                    }
+                }
+            } 
+            // Case 2B: Want to move to another position WITHIN danger zone
+            else if (targetElevatorHeight <= DANGER_ZONE_HEIGHT) {
+                // Only allow this if arm is in safe position or override is enabled
+                if (arm.isAtTarget() || overrideEnabled) {
+                    moveToTargets();
+                } else {
+                    // Move arm to safe position first
+                    arm.setAngle(targetArmAngle);
+                    isInTransition = true;
+                }
+            }
+        } 
+        // Case 3: Normal operation (outside danger zone)
         else {
             isMovingDownThroughDangerZone = false;
+            isMovingUpFromDangerZone = false;
+            isInTransition = false;
             moveToTargets();
         }
     }
 
     private boolean isArmSafe() {
-        // Since arm rotates parallel to elevator and only interfaces at pivot,
-        // we just need to ensure it's stable at its commanded position
         return arm.isAtTarget();
     }
 
@@ -92,13 +113,46 @@ public class SafetySubsystem extends SubsystemBase {
     public boolean isAtTarget() {
         return elevator.isAtTarget() && arm.isAtTarget();
     }
+    
+    // Enable override for emergency situations - use with caution
+    public void enableOverride(boolean enable) {
+        overrideEnabled = enable;
+        SmartDashboard.putBoolean("Safety/Override", overrideEnabled);
+    }
 
     @Override
     public void periodic() {
-        SmartDashboard.putBoolean("Safety/In Danger Zone", isInDangerZone(elevator.getCurrentHeight()));
+        double currentHeight = elevator.getCurrentHeight();
+        boolean currentlyInDangerZone = isInDangerZone(currentHeight);
+        
+        // If we're moving up from danger zone and are now safely above it
+        if (isMovingUpFromDangerZone && !currentlyInDangerZone) {
+            // Complete the movement to final position if not already there
+            if (Math.abs(currentHeight - targetElevatorHeight) > 0.5) {
+                elevator.setHeight(targetElevatorHeight);
+            }
+            
+            // If we've reached the target position, clear the transition flag
+            if (Math.abs(currentHeight - targetElevatorHeight) < 0.5 && arm.isAtTarget()) {
+                isMovingUpFromDangerZone = false;
+            }
+        }
+        
+        // If we were in transition waiting for arm to reach position
+        if (isInTransition && arm.isAtTarget()) {
+            isInTransition = false;
+            moveToTargets();
+        }
+        
+        // Update dashboard data
+        SmartDashboard.putBoolean("Safety/In Danger Zone", currentlyInDangerZone);
         SmartDashboard.putBoolean("Safety/At Target", isAtTarget());
         SmartDashboard.putBoolean("Safety/Moving Down Through Danger", isMovingDownThroughDangerZone);
+        SmartDashboard.putBoolean("Safety/Moving Up From Danger", isMovingUpFromDangerZone);
+        SmartDashboard.putBoolean("Safety/In Transition", isInTransition);
         SmartDashboard.putNumber("Safety/Current Safe Height", getCurrentSafeHeight());
+        SmartDashboard.putNumber("Safety/Target Elevator Height", targetElevatorHeight);
+        SmartDashboard.putNumber("Safety/Target Arm Angle", targetArmAngle);
         SmartDashboard.putBoolean("Safety/Has Algae", algaeIntake.hasBall());
     }
 }
