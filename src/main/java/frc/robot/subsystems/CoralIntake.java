@@ -65,7 +65,7 @@ public class CoralIntake extends SubsystemBase {
         motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         motorConfig.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
         intakeMotor.getConfigurator().apply(motorConfig);
-        intakeMotor.setNeutralMode(NeutralModeValue.Coast);
+        intakeMotor.setNeutralMode(NeutralModeValue.Brake);
     }
     
     @Override

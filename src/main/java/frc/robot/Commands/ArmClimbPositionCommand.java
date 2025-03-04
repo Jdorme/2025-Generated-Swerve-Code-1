@@ -10,7 +10,8 @@ import frc.robot.subsystems.AlgaeIntake;
 
 public class ArmClimbPositionCommand extends Command {
     private enum IntakeState {
-        MOVE_TO_STOW,      // First move to stowed position
+        MOVE_TO_STOW,      // First move to stowed position using safety subsystem
+        WAIT_FOR_STOW,     // Wait until completely at stowed position
         ARM_TO_FLOOR,      // Then move arm to floor position
         ELEVATOR_TO_FLOOR, // Finally move elevator to floor position
         DONE               // Command complete
@@ -37,22 +38,25 @@ public class ArmClimbPositionCommand extends Command {
 
     @Override
     public void initialize() {
-        System.out.println("FloorIntake: Starting command - moving to stow first");
+        System.out.println("ClimbPosition: Starting command - using safety system to move to stow first");
         currentState = IntakeState.MOVE_TO_STOW;
         wasLastStateBallPresent = false;
         
-        // First step: Move to stowed position
-        m_elevator.setHeight(SafetyConstants.STOWED[0]);
-        m_arm.setAngle(SafetyConstants.STOWED[1]);
+        // First step: Move to stowed position using the safety subsystem
+        // This ensures proper sequencing when coming from a low position
+        m_safetySystem.setTargetPosition(
+            SafetyConstants.STOWED[0], 
+            SafetyConstants.STOWED[1]
+        );
     }
 
     private boolean isElevatorAtTarget(double targetHeight) {
         double currentHeight = m_elevator.getCurrentHeight();
         boolean atTarget = Math.abs(currentHeight - targetHeight) <= ELEVATOR_TOLERANCE;
         
-        SmartDashboard.putNumber("FloorIntake/CurrentHeight", currentHeight);
-        SmartDashboard.putNumber("FloorIntake/TargetHeight", targetHeight);
-        SmartDashboard.putNumber("FloorIntake/HeightError", Math.abs(currentHeight - targetHeight));
+        SmartDashboard.putNumber("ClimbPosition/CurrentHeight", currentHeight);
+        SmartDashboard.putNumber("ClimbPosition/TargetHeight", targetHeight);
+        SmartDashboard.putNumber("ClimbPosition/HeightError", Math.abs(currentHeight - targetHeight));
         
         return atTarget;
     }
@@ -61,9 +65,9 @@ public class ArmClimbPositionCommand extends Command {
         double currentAngle = m_arm.getCurrentAngle();
         boolean atTarget = Math.abs(currentAngle - targetAngle) <= ARM_TOLERANCE;
         
-        SmartDashboard.putNumber("FloorIntake/CurrentAngle", currentAngle);
-        SmartDashboard.putNumber("FloorIntake/TargetAngle", targetAngle);
-        SmartDashboard.putNumber("FloorIntake/AngleError", Math.abs(currentAngle - targetAngle));
+        SmartDashboard.putNumber("ClimbPosition/CurrentAngle", currentAngle);
+        SmartDashboard.putNumber("ClimbPosition/TargetAngle", targetAngle);
+        SmartDashboard.putNumber("ClimbPosition/AngleError", Math.abs(currentAngle - targetAngle));
         
         return atTarget;
     }
@@ -72,23 +76,31 @@ public class ArmClimbPositionCommand extends Command {
         boolean elevatorReady = isElevatorAtTarget(targetHeight);
         boolean armReady = isArmAtTarget(targetAngle);
         
-        SmartDashboard.putBoolean("FloorIntake/ElevatorReady", elevatorReady);
-        SmartDashboard.putBoolean("FloorIntake/ArmReady", armReady);
+        SmartDashboard.putBoolean("ClimbPosition/ElevatorReady", elevatorReady);
+        SmartDashboard.putBoolean("ClimbPosition/ArmReady", armReady);
         
         return elevatorReady && armReady;
     }
 
     @Override
     public void execute() {
-        SmartDashboard.putString("FloorIntake/State", currentState.toString());
+        SmartDashboard.putString("ClimbPosition/State", currentState.toString());
 
         switch (currentState) {
             case MOVE_TO_STOW:
-                // Wait until we're at the stowed position
+                // First ensure we're at a safe height using the safety subsystem
+                if (m_safetySystem.isAtTarget()) {
+                    System.out.println("ClimbPosition: Safety system has reached stowed position");
+                    currentState = IntakeState.WAIT_FOR_STOW;
+                }
+                break;
+                
+            case WAIT_FOR_STOW:
+                // Double-check that both arm and elevator are actually at the stowed position
                 if (areBothAtTarget(SafetyConstants.STOWED[0], SafetyConstants.STOWED[1])) {
-                    System.out.println("FloorIntake: Reached stowed position, moving arm to floor position");
+                    System.out.println("ClimbPosition: Confirmed at stowed position, moving arm to climb position");
                     currentState = IntakeState.ARM_TO_FLOOR;
-                    // Move arm to floor position
+                    // Now move arm to floor position - safe to do directly now that we're at stow
                     m_arm.setAngle(SafetyConstants.CLIMB_POSITION[1]);
                 }
                 break;
@@ -96,7 +108,7 @@ public class ArmClimbPositionCommand extends Command {
             case ARM_TO_FLOOR:
                 // Wait for arm to reach floor position
                 if (isArmAtTarget(SafetyConstants.CLIMB_POSITION[1])) {
-                    System.out.println("FloorIntake: Arm at floor angle, moving elevator to floor position");
+                    System.out.println("ClimbPosition: Arm at climb angle, moving elevator to climb position");
                     currentState = IntakeState.ELEVATOR_TO_FLOOR;
                     // Move elevator to floor position
                     m_elevator.setHeight(SafetyConstants.CLIMB_POSITION[0]);
@@ -106,7 +118,7 @@ public class ArmClimbPositionCommand extends Command {
             case ELEVATOR_TO_FLOOR:
                 // Wait for elevator to reach floor position
                 if (isElevatorAtTarget(SafetyConstants.CLIMB_POSITION[0])) {
-                    System.out.println("FloorIntake: Reached floor position, continuing to maintain position");
+                    System.out.println("ClimbPosition: Reached climb position, continuing to maintain position");
                     currentState = IntakeState.DONE;
                 }
                 break;
@@ -115,26 +127,7 @@ public class ArmClimbPositionCommand extends Command {
                 // Keep setting the target positions to maintain them
                 m_arm.setAngle(SafetyConstants.CLIMB_POSITION[1]);
                 m_elevator.setHeight(SafetyConstants.CLIMB_POSITION[0]);
-                
-                // L2AlgaeCommand intake behavior - start intake if we're in position and don't have a ball
-                // boolean hasBall = m_algaeIntake.hasBall();
-                
-                // if (!hasBall) {
-                //     m_algaeIntake.intake();
-                // }
-                
-                // // If we just got a ball, output to console for debugging
-                // if (hasBall && !wasLastStateBallPresent) {
-                //     System.out.println("FloorIntake: Ball acquired, holding position");
-                // }
-                
-                // // Update last state
-                // wasLastStateBallPresent = hasBall;
-
-                // // Log additional state information
-                // SmartDashboard.putBoolean("FloorIntake/HasBall", hasBall);
-                // SmartDashboard.putString("FloorIntake/IntakeState", hasBall ? "HOLDING" : "INTAKING");
-                // break;
+                break;
         }
     }
 
@@ -148,21 +141,12 @@ public class ArmClimbPositionCommand extends Command {
     @Override
     public void end(boolean interrupted) {
         if (interrupted) {
-            System.out.println("FloorIntake: Command interrupted");
+            System.out.println("ClimbPosition: Command interrupted");
         } else {
-            System.out.println("FloorIntake: Command completed normally");
+            System.out.println("ClimbPosition: Command completed normally");
         }
         
-        // L2AlgaeCommand end behavior - stop intake or maintain hold
-        if (!m_algaeIntake.hasBall()) {
-            System.out.println("FloorIntake: No ball held, stopping intake");
-            m_algaeIntake.stop();
-        } else {
-            System.out.println("FloorIntake: Ball held, maintaining hold mode");
-            // The AlgaeIntake will automatically maintain hold mode
-        }
-        
-        // Return to stowed position
+        // Return to stowed position using safety system
         m_safetySystem.setTargetPosition(
             SafetyConstants.STOWED[0], 
             SafetyConstants.STOWED[1]

@@ -90,11 +90,48 @@ public class SafetySubsystem extends SubsystemBase {
         } 
         // Case 3: Normal operation (outside danger zone)
         else {
-            isMovingDownThroughDangerZone = false;
-            isMovingUpFromDangerZone = false;
-            isInTransition = false;
-            moveToTargets();
+            // Check if target requires passing through danger zone or significant arm movement
+            boolean targetIsInDangerZone = isInDangerZone(targetElevatorHeight);
+            
+            // If target is in danger zone or requires arm movement first
+            if (targetIsInDangerZone || needsArmMovementFirst(currentHeight, targetElevatorHeight, targetArmAngle)) {
+                // Move arm first for safety
+                arm.setAngle(targetArmAngle);
+                
+                if (arm.isAtTarget()) {
+                    isInTransition = false;
+                    elevator.setHeight(targetElevatorHeight);
+                } else {
+                    isInTransition = true;
+                }
+            } else {
+                // For truly safe transitions, still sequence the movements 
+                // (arm first, then elevator) to maintain consistent behavior
+                arm.setAngle(targetArmAngle);
+                
+                if (arm.isAtTarget()) {
+                    isMovingDownThroughDangerZone = false;
+                    isMovingUpFromDangerZone = false;
+                    isInTransition = false;
+                    elevator.setHeight(targetElevatorHeight);
+                } else {
+                    isInTransition = true;
+                }
+            }
         }
+    }
+    
+    // Helper method to determine if arm should move first
+    private boolean needsArmMovementFirst(double currentHeight, double targetHeight, double targetAngle) {
+        // Logic to determine if the arm should move first
+        // This could be based on arm extension, target position, etc.
+        
+        // Check if arm needs significant movement (more than 5 degrees)
+        boolean significantArmMovement = Math.abs(arm.getCurrentAngle() - targetAngle) > 5.0;
+        
+        // Always prioritize arm movement when starting from stow position
+        // or when significant arm angle change is needed
+        return significantArmMovement;
     }
 
     private boolean isArmSafe() {
@@ -141,7 +178,8 @@ public class SafetySubsystem extends SubsystemBase {
         // If we were in transition waiting for arm to reach position
         if (isInTransition && arm.isAtTarget()) {
             isInTransition = false;
-            moveToTargets();
+            // Now that arm is in position, we can move elevator
+            elevator.setHeight(targetElevatorHeight);
         }
         
         // Update dashboard data

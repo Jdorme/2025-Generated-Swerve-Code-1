@@ -71,8 +71,22 @@ public static final class EndgameLiftConstants {
     public static final double CURRENT_LIMIT = 40.0; // Amps
     
     // Control constants
-    public static final double LIFT_UP_SPEED = 1; // 30% speed up
-    public static final double LIFT_DOWN_SPEED = -1; // 15% speed down
+    public static final double LIFT_UP_SPEED = 1; // 100% speed up
+    public static final double LIFT_DOWN_SPEED = -1; // 100% speed down
+    
+    // PID Constants
+    public static final class PIDConstants {
+        public static final double kP = 0.1;
+        public static final double kI = 0.0;
+        public static final double kD = 0.0;
+        public static final double kV = 0.02;
+    }
+    
+    // Position Constants - Note: The naming is reversed from actual movement direction
+    // POSITION_RETRACTED actually causes the lift to extend outward from the robot (negative motor rotation)
+    // POSITION_EXTENDED actually causes the lift to retract into the robot (positive motor rotation)
+    public static final double POSITION_RETRACTED = -75; // Outward position (near reverse soft limit -82)
+    public static final double POSITION_EXTENDED = 80; // Inward position (near forward soft limit 85)
 }
 
 public static final class ReefAlignmentConstants {
@@ -126,8 +140,8 @@ public static final class MotionMagicConstants {
         private static final double TEST_JERK = 200;           // 25% of competition speed
 
         // Competition speeds (faster)
-        private static final double COMP_CRUISE_VELOCITY = 120;
-        private static final double COMP_ACCELERATION = 80;
+        private static final double COMP_CRUISE_VELOCITY = 90;//120
+        private static final double COMP_ACCELERATION = 70;//80
         private static final double COMP_JERK = 1000;
 
         // Getter methods that return the appropriate speed based on mode

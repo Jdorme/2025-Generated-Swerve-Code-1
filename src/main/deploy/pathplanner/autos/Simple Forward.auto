@@ -19,13 +19,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Simple Forward Score"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Score L4"
+            "pathName": "Simple Forward"
           }
         }
       ]

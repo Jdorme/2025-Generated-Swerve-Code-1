@@ -100,13 +100,13 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-    //     drivetrain.setDefaultCommand(
-    //         drivetrain.applyRequest(() ->
-    //             drive.withVelocityX(-joystick.getLeftY() * (MaxSpeed/1.5)) //Divide by 4 to reduce max speed
-    //                 .withVelocityY(-joystick.getLeftX() * (MaxSpeed/1.5))
-    //                 .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
-    //         )
-    //    );
+        drivetrain.setDefaultCommand(
+            drivetrain.applyRequest(() ->
+                drive.withVelocityX(-joystick.getLeftY() * (MaxSpeed/1.5)) //Divide by 4 to reduce max speed
+                    .withVelocityY(-joystick.getLeftX() * (MaxSpeed/1.5))
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
+            )
+       );
      
         m_algaeIntake.setDefaultCommand(
             new RunCommand(
@@ -159,9 +159,9 @@ public class RobotContainer {
 
         
         // Button to move to net position
-        joystick.b().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 
-            SafetyConstants.NET_ALGAE[0], 
-            SafetyConstants.NET_ALGAE[1]));
+        // joystick.b().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 
+        //     SafetyConstants.NET_ALGAE[0], 
+        //     SafetyConstants.NET_ALGAE[1]));
 
        // joystick.start().onTrue(new FloorIntakePositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
 
