@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.SafetyConstants;
 import frc.robot.Commands.ElevatorTest;
-import frc.robot.Commands.ReefAlignmentCommand;
 import frc.robot.Commands.StowOnIntakeCommand;
 import frc.robot.Commands.AlgaeCommands.FloorIntakePositionCommand;
 import frc.robot.Commands.AlgaeCommands.L2AlgaeCommand;
@@ -39,7 +38,6 @@ import frc.robot.subsystems.CoralIntake;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.EndgameLiftSubsystem;
 import frc.robot.subsystems.SafetySubsystem;
-import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.Commands.ArmClimbPositionCommand;
 import frc.robot.Commands.ArmCommand;
@@ -62,7 +60,6 @@ public class RobotContainer {
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final ArmSubsystem m_ArmSubsystem = new ArmSubsystem();
     private final CoralIntake m_coralIntake = new CoralIntake();
-    private final VisionSubsystem m_visionSubsystem;
     private final SafetySubsystem m_safetySystem = new SafetySubsystem(m_elevatorSubsystem, m_ArmSubsystem, 
     m_coralIntake, m_algaeIntake);
     private final EndgameLiftSubsystem m_endgameLift = new EndgameLiftSubsystem();
@@ -70,7 +67,6 @@ public class RobotContainer {
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
-        m_visionSubsystem = new VisionSubsystem(drivetrain);
         
         // Register named commands for PathPlanner BEFORE building the auto chooser
         registerAutonomousCommands();

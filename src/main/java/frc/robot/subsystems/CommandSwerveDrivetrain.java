@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -14,7 +15,10 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
+import org.photonvision.EstimatedRobotPose;
+
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
@@ -23,6 +27,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -32,6 +38,7 @@ import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
  * Subsystem so it can easily be used in command-based projects.
+ * Modified to integrate with PhotonVision for pose estimation.
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
     private static final double kSimLoopPeriod = 0.005; // 5 ms
@@ -44,6 +51,17 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.k180deg;
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
+
+    /* PhotonVision integration */
+    private PhotonVisionSubsystem m_photonVision;
+    private boolean m_useVision = true;
+    private double m_lastVisionUpdateTime = 0;
+    private static final double kVisionUpdateRateLimit = 0.2; // Limit vision updates to 5 Hz (every 200ms)
+    
+    /* Standard deviations for vision measurements */
+    private Matrix<N3, N1> m_defaultVisionStdDevs;
+    private Matrix<N3, N1> m_farVisionStdDevs;
+    private final double kFarVisionThreshold = 4.0; // meters - distance beyond which vision is considered "far"
 
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
 
@@ -115,11 +133,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineTranslation;
 
     /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants.
-     * <p>
-     * This constructs the underlying hardware devices, so users should not construct
-     * the devices themselves. If they need the devices, they can access them through
-     * getters in the classes.
+     * Constructs a CTRE SwerveDrivetrain using the specified constants and PhotonVision subsystem.
      *
      * @param drivetrainConstants   Drivetrain-wide constants for the swerve drive
      * @param modules               Constants for each specific module
@@ -129,6 +143,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, modules);
+        m_photonVision = new PhotonVisionSubsystem();
+        initializeVisionStdDevs();
+        
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -136,16 +153,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants.
-     * <p>
-     * This constructs the underlying hardware devices, so users should not construct
-     * the devices themselves. If they need the devices, they can access them through
-     * getters in the classes.
+     * Constructs a CTRE SwerveDrivetrain using the specified constants and PhotonVision subsystem.
      *
      * @param drivetrainConstants     Drivetrain-wide constants for the swerve drive
-     * @param odometryUpdateFrequency The frequency to run the odometry loop. If
-     *                                unspecified or set to 0 Hz, this is 250 Hz on
-     *                                CAN FD, and 100 Hz on CAN 2.0.
+     * @param odometryUpdateFrequency The frequency to run the odometry loop
+  
      * @param modules                 Constants for each specific module
      */
     public CommandSwerveDrivetrain(
@@ -154,6 +166,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, odometryUpdateFrequency, modules);
+        m_photonVision = new PhotonVisionSubsystem();
+        initializeVisionStdDevs();
+        
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -161,22 +176,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants.
-     * <p>
-     * This constructs the underlying hardware devices, so users should not construct
-     * the devices themselves. If they need the devices, they can access them through
-     * getters in the classes.
+     * Constructs a CTRE SwerveDrivetrain using the specified constants and PhotonVision subsystem.
      *
      * @param drivetrainConstants       Drivetrain-wide constants for the swerve drive
-     * @param odometryUpdateFrequency   The frequency to run the odometry loop. If
-     *                                  unspecified or set to 0 Hz, this is 250 Hz on
-     *                                  CAN FD, and 100 Hz on CAN 2.0.
+     * @param odometryUpdateFrequency   The frequency to run the odometry loop
      * @param odometryStandardDeviation The standard deviation for odometry calculation
-     *                                  in the form [x, y, theta]ᵀ, with units in meters
-     *                                  and radians
      * @param visionStandardDeviation   The standard deviation for vision calculation
-     *                                  in the form [x, y, theta]ᵀ, with units in meters
-     *                                  and radians
+
      * @param modules                   Constants for each specific module
      */
     public CommandSwerveDrivetrain(
@@ -187,13 +193,37 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation, modules);
+        m_photonVision = new PhotonVisionSubsystem();
+        m_defaultVisionStdDevs = visionStandardDeviation;
+        initializeVisionStdDevs();
+        
         if (Utils.isSimulation()) {
             startSimThread();
         }
         configureAutoBuilder();
     }
 
-        private void configureAutoBuilder() {
+    /**
+     * Initialize the standard deviations for vision measurements
+     */
+    private void initializeVisionStdDevs() {
+        // If default vision std devs weren't initialized in the constructor
+        if (m_defaultVisionStdDevs == null) {
+            // Create default standard deviations - moderate trust in vision
+            m_defaultVisionStdDevs = new Matrix<>(N3.instance, N1.instance);
+            m_defaultVisionStdDevs.set(0, 0, 0.25);  // X standard deviation (meters)0.25
+            m_defaultVisionStdDevs.set(1, 0, 0.25);  // Y standard deviation (meters).25
+            m_defaultVisionStdDevs.set(2, 0, 0.1);  // Rotation standard deviation (radians).1
+        }
+        
+        // Create higher standard deviations for far vision measurements - less trust
+        m_farVisionStdDevs = new Matrix<>(N3.instance, N1.instance);
+        m_farVisionStdDevs.set(0, 0, 0.5);  // X standard deviation (meters) 1.5
+        m_farVisionStdDevs.set(1, 0, 0.5);  // Y standard deviation (meters)
+        m_farVisionStdDevs.set(2, 0, 0.2);  // Rotation standard deviation (radians)
+    }
+
+    private void configureAutoBuilder() {
         try {
             var config = RobotConfig.fromGUISettings();
             AutoBuilder.configure(
@@ -220,6 +250,24 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         } catch (Exception ex) {
             DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
         }
+    }
+
+    /**
+     * Set the PhotonVision subsystem to use for pose estimation
+     * @param photonVision The PhotonVision subsystem to use
+     */
+    public void setPhotonVision(PhotonVisionSubsystem photonVision) {
+        m_photonVision = photonVision;
+        SmartDashboard.putBoolean("Drivetrain/HasVision", photonVision != null);
+    }
+    
+    /**
+     * Enable or disable the use of vision for pose estimation
+     * @param useVision Whether to use vision for pose estimation
+     */
+    public void setUseVision(boolean useVision) {
+        m_useVision = useVision;
+        SmartDashboard.putBoolean("Drivetrain/UseVision", useVision);
     }
 
     /**
@@ -256,13 +304,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     @Override
     public void periodic() {
-        /*
-         * Periodically try to apply the operator perspective.
-         * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
-         * This allows us to correct the perspective in case the robot code restarts mid-match.
-         * Otherwise, only check and apply the operator perspective if the DS is disabled.
-         * This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
-         */
+        // Apply operator perspective if needed
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
                 setOperatorPerspectiveForward(
@@ -272,6 +314,73 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 );
                 m_hasAppliedOperatorPerspective = true;
             });
+        }
+        
+        // Update pose with vision measurements
+        updatePoseWithVision();
+        
+        // Log current pose to SmartDashboard
+        Pose2d currentPose = getState().Pose;
+        SmartDashboard.putNumber("Drivetrain/Pose/X", currentPose.getX());
+        SmartDashboard.putNumber("Drivetrain/Pose/Y", currentPose.getY());
+        SmartDashboard.putNumber("Drivetrain/Pose/Rotation", currentPose.getRotation().getDegrees());
+    }
+    
+    /**
+     * Update the robot pose using vision measurements from PhotonVision
+     */
+    private void updatePoseWithVision() {
+        // If vision is disabled or PhotonVision subsystem not initialized, skip
+        if (!m_useVision || m_photonVision == null) {
+            return;
+        }
+        
+        // Throttle vision updates to avoid overwhelming the pose estimator
+        double currentTime = Timer.getFPGATimestamp();
+        if (currentTime - m_lastVisionUpdateTime < kVisionUpdateRateLimit) {
+            return;
+        }
+        
+        // Get the best estimated pose from PhotonVision
+        Optional<EstimatedRobotPose> visionPose = m_photonVision.getBestEstimatedPose();
+        
+        if (visionPose.isPresent()) {
+            EstimatedRobotPose pose = visionPose.get();
+            
+            // Convert Pose3d to Pose2d
+            Pose2d visionPose2d = pose.estimatedPose.toPose2d();
+            
+            // Get the confidence in the vision measurement
+            double poseConfidence = m_photonVision.calculatePoseConfidence(pose);
+            
+            // Check if we should use this vision measurement
+            if (poseConfidence > 0.2) { // Minimum confidence threshold
+                // Calculate average distance to AprilTags
+                double avgDistance = 0.0;
+                for (var target : pose.targetsUsed) {
+                    avgDistance += target.getBestCameraToTarget().getTranslation().getNorm();
+                }
+                avgDistance /= pose.targetsUsed.size();
+                
+                // Use appropriate standard deviations based on distance
+                Matrix<N3, N1> visionStdDevs = avgDistance > kFarVisionThreshold ? 
+                    m_farVisionStdDevs : m_defaultVisionStdDevs;
+                
+                // Apply lower standard deviations (more trust) for multi-tag poses
+                if (pose.targetsUsed.size() > 1) {
+                    visionStdDevs = visionStdDevs.times(0.7); // 30% lower std devs for multi-tag
+                }
+                
+                // Apply the vision measurement to the pose estimator
+                addVisionMeasurement(visionPose2d, pose.timestampSeconds, visionStdDevs);
+                
+                // Log vision update details
+                SmartDashboard.putNumber("Drivetrain/Vision/UpdateTime", currentTime);
+                SmartDashboard.putNumber("Drivetrain/Vision/Confidence", poseConfidence);
+                SmartDashboard.putNumber("Drivetrain/Vision/AvgDistance", avgDistance);
+                SmartDashboard.putNumber("Drivetrain/Vision/TagCount", pose.targetsUsed.size());
+                m_lastVisionUpdateTime = currentTime;
+            }
         }
     }
 
