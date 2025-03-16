@@ -11,33 +11,97 @@
           }
         },
         {
-          "type": "path",
+          "type": "wait",
           "data": {
-            "pathName": "Right Side Start"
+            "waitTime": 0.75
           }
         },
         {
-          "type": "path",
+          "type": "race",
           "data": {
-            "pathName": "Source ;()"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "SourceTo2ndL4"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "L4Elevator"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Right Side Start"
+                }
+              }
+            ]
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "Score L4"
+            "name": "AutoL4ScoreCommand"
           }
         },
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "Back To Source"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoCoralIntakeCommand"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Source ;()"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "race",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "L4Elevator"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "SourceTo2ndL4"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoL4ScoreCommand"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoCoralIntakeCommand"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Back To Source"
+                }
+              }
+            ]
           }
         }
       ]

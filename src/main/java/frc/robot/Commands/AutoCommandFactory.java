@@ -13,6 +13,9 @@ import frc.robot.Commands.CoralCommands.CoralIntakeL2AlgaeCommand;
 import frc.robot.Commands.CoralCommands.L2ScoreCommand;
 import frc.robot.Commands.CoralCommands.L3ScoreCommand;
 import frc.robot.Commands.CoralCommands.L4ScoreCommand;
+import frc.robot.Commands.CoralCommands.AutoCoralIntakeCommand;
+import frc.robot.Commands.CoralCommands.AutoElevatorL4Command;
+import frc.robot.Commands.CoralCommands.AutoL4ScoreCommand;
 import frc.robot.subsystems.AlgaeIntake;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.CoralIntake;
@@ -39,6 +42,8 @@ public class AutoCommandFactory {
         NamedCommands.registerCommand("Score L2", new L2ScoreCommand(safetySystem, coralIntake, elevator, arm));
         NamedCommands.registerCommand("Score L3", new L3ScoreCommand(safetySystem, coralIntake, elevator, arm));
         NamedCommands.registerCommand("Score L4", new L4ScoreCommand(safetySystem, coralIntake, elevator, arm));
+        NamedCommands.registerCommand("AutoL4ScoreCommand", new AutoL4ScoreCommand(safetySystem, coralIntake, elevator, arm));
+        
 
         // Register intake commands
         NamedCommands.registerCommand("Intake Algae L2", new L2AlgaeCommand(safetySystem, algaeIntake));
@@ -50,6 +55,7 @@ public class AutoCommandFactory {
             new ArmElevatorToPositionCommand(safetySystem, SafetyConstants.STOWED[0], SafetyConstants.STOWED[1]));
         NamedCommands.registerCommand("Ground Algae Position", 
             new ArmElevatorToPositionCommand(safetySystem, SafetyConstants.GROUND_ALGAE[0], SafetyConstants.GROUND_ALGAE[1]));
+        NamedCommands.registerCommand("L4Elevator", new AutoElevatorL4Command(elevator));
         
         // Register intake actions
         NamedCommands.registerCommand("Algae Intake", Commands.run(() -> algaeIntake.intake(), algaeIntake)
@@ -60,6 +66,7 @@ public class AutoCommandFactory {
             
         NamedCommands.registerCommand("Coral Intake", Commands.run(() -> coralIntake.intakeCoral(), coralIntake)
             .withTimeout(3.0));
+        NamedCommands.registerCommand("AutoCoralIntakeCommand", new AutoCoralIntakeCommand(coralIntake, safetySystem));
         NamedCommands.registerCommand("Coral Stop", Commands.runOnce(() -> coralIntake.stop(), coralIntake));
         NamedCommands.registerCommand("Coral Reverse", Commands.run(() -> coralIntake.reverse(), coralIntake)
             .withTimeout(1.0));

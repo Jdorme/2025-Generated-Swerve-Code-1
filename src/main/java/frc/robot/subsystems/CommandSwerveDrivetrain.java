@@ -57,6 +57,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private boolean m_useVision = true;
     private double m_lastVisionUpdateTime = 0;
     private static final double kVisionUpdateRateLimit = 0.2; // Limit vision updates to 5 Hz (every 200ms)
+
+    private Pose2d m_lastVisionPose = null;
+private int m_consistentVisionCount = 0;
     
     /* Standard deviations for vision measurements */
     private Matrix<N3, N1> m_defaultVisionStdDevs;
@@ -211,16 +214,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (m_defaultVisionStdDevs == null) {
             // Create default standard deviations - moderate trust in vision
             m_defaultVisionStdDevs = new Matrix<>(N3.instance, N1.instance);
-            m_defaultVisionStdDevs.set(0, 0, 0.25);  // X standard deviation (meters)0.25
-            m_defaultVisionStdDevs.set(1, 0, 0.25);  // Y standard deviation (meters).25
-            m_defaultVisionStdDevs.set(2, 0, 0.1);  // Rotation standard deviation (radians).1
+            m_defaultVisionStdDevs.set(0, 0, .25);  // X standard deviation (meters)0.25
+            m_defaultVisionStdDevs.set(1, 0, .25);  // Y standard deviation (meters).25
+            m_defaultVisionStdDevs.set(2, 0, 0.25);  // Rotation standard deviation (radians).1
         }
         
         // Create higher standard deviations for far vision measurements - less trust
         m_farVisionStdDevs = new Matrix<>(N3.instance, N1.instance);
-        m_farVisionStdDevs.set(0, 0, 0.5);  // X standard deviation (meters) 1.5
-        m_farVisionStdDevs.set(1, 0, 0.5);  // Y standard deviation (meters)
-        m_farVisionStdDevs.set(2, 0, 0.2);  // Rotation standard deviation (radians)
+        m_farVisionStdDevs.set(0, 0, 1.5);  // X standard deviation (meters) 1.5
+        m_farVisionStdDevs.set(1, 0, 1.5);  // Y standard deviation (meters)
+        m_farVisionStdDevs.set(2, 0, 0.25);  // Rotation standard deviation (radians)
     }
 
     private void configureAutoBuilder() {
@@ -329,32 +332,92 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /**
      * Update the robot pose using vision measurements from PhotonVision
      */
-    private void updatePoseWithVision() {
-        // If vision is disabled or PhotonVision subsystem not initialized, skip
-        if (!m_useVision || m_photonVision == null) {
-            return;
-        }
+    /**
+ * Update the robot pose using vision measurements from PhotonVision
+ */
+/**
+ * Update the robot pose using vision measurements from PhotonVision
+ */
+/**
+ * Update the robot pose using vision measurements from PhotonVision
+ */
+/**
+ * Update the robot pose using vision measurements from PhotonVision
+ */
+private void updatePoseWithVision() {
+    // If vision is disabled or PhotonVision subsystem not initialized, skip
+    if (!m_useVision || m_photonVision == null) {
+        return;
+    }
+    
+    // Throttle vision updates to avoid overwhelming the pose estimator
+    double currentTime = Timer.getFPGATimestamp();
+    if (currentTime - m_lastVisionUpdateTime < kVisionUpdateRateLimit) {
+        return;
+    }
+    
+    // Get the best estimated pose from PhotonVision
+    Optional<EstimatedRobotPose> visionPose = m_photonVision.getBestEstimatedPose();
+    
+    if (visionPose.isPresent()) {
+        EstimatedRobotPose pose = visionPose.get();
         
-        // Throttle vision updates to avoid overwhelming the pose estimator
-        double currentTime = Timer.getFPGATimestamp();
-        if (currentTime - m_lastVisionUpdateTime < kVisionUpdateRateLimit) {
-            return;
-        }
+        // Convert Pose3d to Pose2d
+        Pose2d visionPose2d = pose.estimatedPose.toPose2d();
         
-        // Get the best estimated pose from PhotonVision
-        Optional<EstimatedRobotPose> visionPose = m_photonVision.getBestEstimatedPose();
+        // Get the confidence in the vision measurement
+        double poseConfidence = m_photonVision.calculatePoseConfidence(pose);
         
-        if (visionPose.isPresent()) {
-            EstimatedRobotPose pose = visionPose.get();
+        // Check if we should use this vision measurement
+        if (poseConfidence > 0.43) { // Minimum confidence threshold
+            // Get current pose from odometry
+            Pose2d currentPose = getState().Pose;
+
+            // Calculate differences between current pose and vision pose
+            double positionDifference = currentPose.getTranslation().getDistance(visionPose2d.getTranslation());
+            double rotationDifference = Math.abs(currentPose.getRotation().minus(visionPose2d.getRotation()).getDegrees());
+
+            // Log the differences
+            SmartDashboard.putNumber("Drivetrain/Vision/PositionDifference", positionDifference);
+            SmartDashboard.putNumber("Drivetrain/Vision/RotationDifference", rotationDifference);
+
+            // Track consistent vision poses using static variables
+            if (m_lastVisionPose == null) {
+                m_lastVisionPose = visionPose2d;
+                m_consistentVisionCount = 1;
+            } else {
+                // Check if this vision pose is close to the last one
+                double visionPoseDifference = m_lastVisionPose.getTranslation().getDistance(visionPose2d.getTranslation());
+                double visionRotationDifference = Math.abs(m_lastVisionPose.getRotation().minus(visionPose2d.getRotation()).getDegrees());
+                
+                if (visionPoseDifference < 0.3 && visionRotationDifference < 10) {
+                    // Vision pose is consistent with previous one
+                    m_consistentVisionCount++;
+                    SmartDashboard.putNumber("Drivetrain/Vision/ConsistentCount", m_consistentVisionCount);
+                } else {
+                    // Vision pose is different, reset counter
+                    m_lastVisionPose = visionPose2d;
+                    m_consistentVisionCount = 1;
+                    SmartDashboard.putNumber("Drivetrain/Vision/ConsistentCount", m_consistentVisionCount);
+                }
+            }
             
-            // Convert Pose3d to Pose2d
-            Pose2d visionPose2d = pose.estimatedPose.toPose2d();
+            // Check if this is an initialization case or robot is disabled
+            boolean isInitialization = m_lastVisionUpdateTime == 0 || 
+                                      (Math.abs(currentPose.getX()) < 0.1 && 
+                                       Math.abs(currentPose.getY()) < 0.1);
+            boolean isRobotDisabled = !DriverStation.isEnabled();
+            boolean hasConsistentVision = m_consistentVisionCount >= 3; // Require 3 consistent vision poses
             
-            // Get the confidence in the vision measurement
-            double poseConfidence = m_photonVision.calculatePoseConfidence(pose);
-            
-            // Check if we should use this vision measurement
-            if (poseConfidence > 0.2) { // Minimum confidence threshold
+            // Accept vision updates if:
+            // 1. During initialization, OR
+            // 2. When robot is disabled, OR
+            // 3. When position/rotation differences are within thresholds, OR
+            // 4. When we have consistent vision poses
+            if (isInitialization || isRobotDisabled || 
+                (positionDifference < 0.5 && rotationDifference < 15) ||
+                hasConsistentVision) {
+                
                 // Calculate average distance to AprilTags
                 double avgDistance = 0.0;
                 for (var target : pose.targetsUsed) {
@@ -371,6 +434,27 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     visionStdDevs = visionStdDevs.times(0.7); // 30% lower std devs for multi-tag
                 }
                 
+                // During initialization or when disabled, trust vision more (lower std devs)
+                if (isInitialization || isRobotDisabled) {
+                    visionStdDevs = visionStdDevs.times(0.5); // 50% lower std devs
+                } else if (hasConsistentVision && positionDifference > 0.5) {
+                    // For consistent vision that's far from current pose, use higher std devs
+                    // This allows gradual correction instead of jumping
+                    visionStdDevs = visionStdDevs.times(2.0 + positionDifference);
+                    SmartDashboard.putBoolean("Drivetrain/Vision/GradualCorrection", true);
+                }
+                
+                // Log special conditions
+                if (isInitialization) {
+                    SmartDashboard.putBoolean("Drivetrain/Vision/Initialization", true);
+                }
+                if (isRobotDisabled) {
+                    SmartDashboard.putBoolean("Drivetrain/Vision/DisabledUpdate", true);
+                }
+                if (hasConsistentVision) {
+                    SmartDashboard.putBoolean("Drivetrain/Vision/ConsistentVision", true);
+                }
+                
                 // Apply the vision measurement to the pose estimator
                 addVisionMeasurement(visionPose2d, pose.timestampSeconds, visionStdDevs);
                 
@@ -379,11 +463,20 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 SmartDashboard.putNumber("Drivetrain/Vision/Confidence", poseConfidence);
                 SmartDashboard.putNumber("Drivetrain/Vision/AvgDistance", avgDistance);
                 SmartDashboard.putNumber("Drivetrain/Vision/TagCount", pose.targetsUsed.size());
+                SmartDashboard.putBoolean("Drivetrain/Vision/UpdateAccepted", true);
                 m_lastVisionUpdateTime = currentTime;
+            } else {
+                // Log rejected update
+                SmartDashboard.putBoolean("Drivetrain/Vision/UpdateAccepted", false);
+                SmartDashboard.putString("Drivetrain/Vision/RejectionReason", 
+                    "Position diff: " + String.format("%.2f", positionDifference) + 
+                    ", Rotation diff: " + String.format("%.2f", rotationDifference));
             }
         }
     }
 
+
+}
     private void startSimThread() {
         m_lastSimTime = Utils.getCurrentTimeSeconds();
 

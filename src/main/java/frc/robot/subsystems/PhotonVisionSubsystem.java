@@ -56,15 +56,12 @@ public class PhotonVisionSubsystem extends SubsystemBase {
             fieldLayout = AprilTagFields.k2025Reefscape.loadAprilTagLayoutField();
             
             // Add cameras - update names to match your configuration
-            addCamera("SourceElevatorCam", new Transform3d(
-                new Translation3d(-0.2855722, -0.1276096, 1.006094),  // X forward, Y left, Z up
-                new Rotation3d(Math.toRadians(-25), Math.toRadians(0),Math.toRadians( 90))  // Roll, pitch, yaw
-            ));
-
             addCamera("EndGameCam", new Transform3d(
-                new Translation3d(0.232029, -0.1676654, 0.3151886),  // X forward, Y left, Z up
-                new Rotation3d(Math.toRadians(5), Math.toRadians(0),Math.toRadians( -104.9))  // Roll, pitch, yaw
-            ));
+              new Translation3d(0.232029, -0.1676654, 0.3151886),  // X forward, Y left, Z up
+              new Rotation3d(Math.toRadians(5), Math.toRadians(0),Math.toRadians( -104.9))  // Roll, pitch, yaw
+          ));
+
+            
             
             // You can add more cameras here
             // addCamera("SecondCamera", new Transform3d(...));
@@ -317,11 +314,11 @@ public class PhotonVisionSubsystem extends SubsystemBase {
         double strategyBonus = pose.strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR ? 0.2 : 0.0;
         
         // Calculate confidence based on tag count and distance
-        double distanceConfidence = Math.max(0.1, Math.min(1.0, 5.0 / avgDistance));
+        double distanceConfidence = Math.max(0.1, Math.min(1.0, 1.1 / avgDistance));
         double tagCountConfidence = Math.min(1.0, tagCount * 0.5); // 2+ tags = full confidence
         
         // Combine factors with appropriate weights
-        double confidence = 0.6 * distanceConfidence + 0.4 * tagCountConfidence + strategyBonus;
+        double confidence = 0.4 * distanceConfidence + 0.6 * tagCountConfidence + strategyBonus;
         
         // Cap at 1.0
         return Math.min(1.0, confidence);
