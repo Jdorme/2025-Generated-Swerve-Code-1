@@ -1,4 +1,4 @@
-IS A WORK IN PROGRESS
+IS A WORK IN PROGRESS; please view in actual file becasue the formatting gets messed up in the preview
 
 Notes:
 Pov = d-pad on the controller; “pov” is how the d-pad is indicated for the Xbox controller on WPIlib
