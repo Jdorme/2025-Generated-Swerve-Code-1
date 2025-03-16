@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.217,
-        "y": 1.578
+        "x": 3.958,
+        "y": 2.85
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.134942896007975,
-        "y": 1.8847454828004775
+        "x": 3.776209677419354,
+        "y": 2.356572580645161
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 5.204,
-        "y": 2.967
+        "x": 0.796,
+        "y": 1.065
       },
       "prevControl": {
-        "x": 5.631290662265022,
-        "y": 2.258662920098976
+        "x": 1.3222580645161284,
+        "y": 1.1425806451612892
       },
       "nextControl": null,
       "isLocked": false,
@@ -33,8 +33,8 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "Score L4",
-      "waypointRelativePos": 0.8965517241379334,
+      "name": "Intake Coral",
+      "waypointRelativePos": 0.17572944297082296,
       "endWaypointRelativePos": null,
       "command": null
     }
@@ -49,13 +49,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -150.124
+    "rotation": 143.617609746278
   },
   "reversed": false,
   "folder": "Amarillo",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -107.42986281766798
+    "rotation": 150.18953741559332
   },
   "useDefaultConstraints": true
 }

@@ -8,20 +8,20 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.783427419354838,
-        "y": 1.0776612903225793
+        "x": 2.0039112903225798,
+        "y": 1.2854032258064512
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.9579838709677415,
+        "x": 3.958,
         "y": 2.8499596774193536
       },
       "prevControl": {
-        "x": 2.9579838709677415,
-        "y": 2.8499596774193536
+        "x": 3.5100403225806445,
+        "y": 2.155322580645161
       },
       "nextControl": null,
       "isLocked": false,
@@ -45,7 +45,7 @@
     "rotation": 148.44861505168652
   },
   "reversed": false,
-  "folder": "Waco",
+  "folder": "Amarillo",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 143.65500328375074

@@ -11,33 +11,15 @@
           }
         },
         {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.5
-          }
-        },
-        {
           "type": "path",
           "data": {
             "pathName": "Right Side Start"
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "Score L4"
-          }
-        },
-        {
           "type": "path",
           "data": {
             "pathName": "Source ;()"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Intake Coral"
           }
         },
         {
@@ -51,11 +33,17 @@
           "data": {
             "name": "Score L4"
           }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Back To Source"
+          }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": "Waco",
+  "folder": "Amarillo",
   "choreoAuto": false
 }
