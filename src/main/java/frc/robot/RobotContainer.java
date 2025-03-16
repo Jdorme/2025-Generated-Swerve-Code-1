@@ -98,10 +98,23 @@ public class RobotContainer {
     private void configureBindings() {
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * (MaxSpeed/1.5)) //Divide by 4 to reduce max speed
-                    .withVelocityY(-joystick.getLeftX() * (MaxSpeed/1.5))
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
-            )
+            drive.withVelocityX(-Math.signum(joystick.getLeftY()) * Math.pow(Math.abs(joystick.getLeftY()), 2) * (MaxSpeed/1.5))  
+            // Drive command with exponential joystick response
+// Using direct Math in equations: input² preserves sign by multiplying by Math.signum
+// At 50% joystick input, you get 25% of max speed
+// At 100% joystick input, you get 100% of max speed
+//
+// ADJUSTING THE EXPONENT:
+// Higher exponent (e.g., 3 or 4): Creates more precise control at low speeds,
+//   less sensitive in the middle range, but still reaches full speed at 100% input.
+//   Great for fine adjustments during precise operations.
+// Lower exponent (e.g., 1.5): More responsive at mid-range inputs,
+//   with a less dramatic curve. Better for responsive driving.
+// Exponent = 1: Returns to linear control (50% input = 50% speed).
+//
+            .withVelocityY(-Math.signum(joystick.getLeftX()) * Math.pow(Math.abs(joystick.getLeftX()), 2) * (MaxSpeed/1.5))
+            .withRotationalRate(-Math.signum(joystick.getRightX()) * Math.pow(Math.abs(joystick.getRightX()), 2) * MaxAngularRate))
+            
        );
      
         m_algaeIntake.setDefaultCommand(
