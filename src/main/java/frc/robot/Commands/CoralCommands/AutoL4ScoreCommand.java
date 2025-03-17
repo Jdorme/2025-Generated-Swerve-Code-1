@@ -2,6 +2,7 @@ package frc.robot.Commands.CoralCommands;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Constants;
 import frc.robot.Constants.SafetyConstants;
 import frc.robot.subsystems.SafetySubsystem;
 import frc.robot.subsystems.CoralIntake;
@@ -27,7 +28,7 @@ public class AutoL4ScoreCommand extends Command {
     // Position tolerances
     private static final double ELEVATOR_TOLERANCE = 0.5; // inches
     private static final double ARM_TOLERANCE = 2.0; // degrees
-    private static final double SCORING_TIME = .375; // seconds
+    private static final double SCORING_TIME = .125; // seconds
     
     public AutoL4ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
                          ElevatorSubsystem elevator, ArmSubsystem arm) {
@@ -80,12 +81,13 @@ public class AutoL4ScoreCommand extends Command {
                 if (isElevatorAtTarget()) {
                     System.out.println("AutoL4Score: Elevator at height, moving arm");
                     currentState = ScoreState.ARM_TO_SCORE;
-                    m_arm.setAngle(SafetyConstants.L4[1]);
+                    
                 }
                 break;
 
             case ARM_TO_SCORE:
                 // Wait for arm to reach scoring angle
+                m_arm.setAngle(SafetyConstants.L4[1]);
                 if (isArmAtTarget(SafetyConstants.L4[1])) {
                     System.out.println("AutoL4Score: Arm at scoring angle, starting coral");
                     currentState = ScoreState.SCORING;
@@ -94,21 +96,23 @@ public class AutoL4ScoreCommand extends Command {
                 }
                 break;
 
-            case SCORING:
+                case SCORING:
                 // Wait for scoring time
                 if ((System.currentTimeMillis() - waitStartTime) >= (SCORING_TIME * 1000)) {
                     System.out.println("AutoL4Score: Scoring complete, moving arm back");
                     currentState = ScoreState.ARM_BACK;
-                    m_coralIntake.stop();
                     m_arm.setAngle(0);
+                    // Do NOT stop the motor here
                 }
                 break;
-
-            case ARM_BACK:
-                // Wait for arm to return to zero
+            
+                case ARM_BACK:
+                // Wait for arm to fully return before moving the elevator down
                 if (isArmAtTarget(0)) {
-                    System.out.println("AutoL4Score: Arm returned to zero, sequence complete");
-                    currentState = ScoreState.DONE;
+                    System.out.println("AutoL4Score: Arm returned to zero, lowering elevator");
+                    m_coralIntake.stop(); // Stop intake before moving the elevator
+                    m_elevator.setHeight(SafetyConstants.STOWED[0]); // Start lowering elevator
+                    currentState = ScoreState.DONE; // Mark command as finished without waiting for elevator
                 }
                 break;
 

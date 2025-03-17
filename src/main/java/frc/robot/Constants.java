@@ -46,7 +46,7 @@ public static final class SafetyConstants{
         //------------Setpoints---------------
                 // (elevator height, arm angle)
                 public static final double[] STOWED = {14, 0.0};
-                public static final double[] L4 = {29.7,40};
+                public static final double[] L4 = {29.7,45};
                 public static final double[] L3 = {16.25, 34};
                 public static final double[] L2 = {10.0, 45};
                 public static final double[] PICKUP = {17.5, -125};
