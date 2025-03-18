@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -41,6 +42,7 @@ import frc.robot.subsystems.SafetySubsystem;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.Commands.ArmClimbPositionCommand;
 import frc.robot.Commands.ArmCommand;
+import frc.robot.Commands.SafeInitializationCommand;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
@@ -63,6 +65,8 @@ public class RobotContainer {
     private final SafetySubsystem m_safetySystem = new SafetySubsystem(m_elevatorSubsystem, m_ArmSubsystem, 
     m_coralIntake, m_algaeIntake);
     private final EndgameLiftSubsystem m_endgameLift = new EndgameLiftSubsystem();
+    private final SafeInitializationCommand m_safetyInitCommand = new SafeInitializationCommand(
+    m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem);
 
     private final SendableChooser<Command> autoChooser;
 
@@ -82,6 +86,20 @@ public class RobotContainer {
      * Register commands that can be used in autonomous routines.
      * This method registers all our commands with PathPlanner's named command system.
      */
+    public void runSafetyInitialization() {
+    // Cancel any running commands that might interfere
+    CommandScheduler.getInstance().cancelAll();
+    
+    // Schedule the safety initialization command
+    m_safetyInitCommand.schedule();
+    
+    // Note: We don't wait for it to complete here, as that would block the robot thread
+    // The command will run in the background, preventing other commands from
+    // taking control of the subsystems until it's finished
+    
+    System.out.println("Safety initialization sequence started");
+}
+
     private void registerAutonomousCommands() {
         // Register commands using the AutoCommandFactory
         AutoCommandFactory.registerNamedCommands(
