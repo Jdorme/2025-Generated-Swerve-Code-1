@@ -3,25 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.958,
-        "y": 2.85
+        "x": 5.70375,
+        "y": 4.181
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.776209677419354,
-        "y": 2.356572580645161
+        "x": 5.990727683292711,
+        "y": 4.198513215265352
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 0.796,
-        "y": 1.065
+        "x": 6.15225,
+        "y": 5.2925
       },
       "prevControl": {
-        "x": 1.3222580645161284,
-        "y": 1.1425806451612892
+        "x": 6.2228782610246824,
+        "y": 5.044363374517766
+      },
+      "nextControl": {
+        "x": 5.893709091370354,
+        "y": 6.200825756371822
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.5502500000000001,
+        "y": 7.4375
+      },
+      "prevControl": {
+        "x": 3.688111463779382,
+        "y": 6.328240470380738
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,13 +58,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 143.617609746278
+    "rotation": -145.66978280449666
   },
   "reversed": false,
-  "folder": "Amarillo Right",
+  "folder": "Amarillo Center",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 150.18953741559332
+    "rotation": -88.83086067209265
   },
   "useDefaultConstraints": true
 }

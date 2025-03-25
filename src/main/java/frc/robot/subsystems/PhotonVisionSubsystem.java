@@ -53,7 +53,7 @@ public class PhotonVisionSubsystem extends SubsystemBase {
     public PhotonVisionSubsystem() {
         try {
             // Load the 2024 field layout
-            fieldLayout = AprilTagFields.k2025Reefscape.loadAprilTagLayoutField();
+            fieldLayout = AprilTagFields.k2025ReefscapeAndyMark.loadAprilTagLayoutField();
             
             // Add cameras - update names to match your configuration
             addCamera("EndGameCam", new Transform3d(
