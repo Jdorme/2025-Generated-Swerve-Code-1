@@ -3,9 +3,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class SafetySubsystem extends SubsystemBase {
-    private static final double DANGER_ZONE_HEIGHT = 11; // inches
-    private static final double STANDARD_SAFE_HEIGHT = DANGER_ZONE_HEIGHT + 2.0; // inches
-    private static final double ALGAE_SAFE_HEIGHT = DANGER_ZONE_HEIGHT + 5.0; // Higher safe height for algae
+    private static final double DANGER_ZONE_HEIGHT = 4; // inches
+    private static final double STANDARD_SAFE_HEIGHT = DANGER_ZONE_HEIGHT + 0; // inches
+    private static final double ALGAE_SAFE_HEIGHT = DANGER_ZONE_HEIGHT + 0; // Higher safe height for algae
     
     private final ElevatorSubsystem elevator;
     private final ArmSubsystem arm;

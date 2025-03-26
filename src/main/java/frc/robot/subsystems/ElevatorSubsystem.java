@@ -16,7 +16,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     // Physical constants
     private static final double GEAR_RATIO = 9.0; // 9:1 reduction
     private static final double SPROCKET_PITCH_DIAMETER = 1.751; // inches
-    private static final double MAX_HEIGHT = 29.7; // inches
+    private static final double MAX_HEIGHT = 26.7; // inches
     
     // Motors
     private final TalonFX masterMotor;

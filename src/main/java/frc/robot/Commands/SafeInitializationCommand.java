@@ -26,8 +26,8 @@ public class SafeInitializationCommand extends Command {
     private InitState currentState = InitState.CHECK_POSITION;
     
     // Position safety thresholds
-    private static final double DANGER_ZONE_HEIGHT = 11.0; // inches
-    private static final double SAFE_HEIGHT = 14.0; // inches - minimum safe height
+    private static final double DANGER_ZONE_HEIGHT = 3.9; // inches
+    private static final double SAFE_HEIGHT = 5.0; // inches - minimum safe height
     private static final double ELEVATOR_TOLERANCE = 0.5; // inches
     private static final double ARM_TOLERANCE = 2.0; // degrees
     

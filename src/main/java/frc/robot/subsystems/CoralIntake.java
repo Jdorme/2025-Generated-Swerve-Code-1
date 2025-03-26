@@ -16,7 +16,7 @@ public class CoralIntake extends SubsystemBase {
 
     // Control constants
     private static final double INTAKE_SPEED = .82; //.75
-    private static final double HOLD_SPEED = 0;
+    private static final double HOLD_SPEED = 0.1;
     private static final double HOLD_BACK_SPEED = 1;  // Speed for holding coral at the back
     private static final double REVERSE_SPEED = -.675;
 

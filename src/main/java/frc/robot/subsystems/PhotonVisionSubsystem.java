@@ -59,10 +59,10 @@ public class PhotonVisionSubsystem extends SubsystemBase {
             addCamera("EndGameCam", new Transform3d(
               new Translation3d(0.232029, -0.1676654, 0.3151886),  // X forward, Y left, Z up
               new Rotation3d(Math.toRadians(5), Math.toRadians(0),Math.toRadians( -104.9)) ));// Roll, pitch, yaw
-            addCamera("ElevatorCam", new Transform3d(
-                new Translation3d(-0.1725676, -0.2653792, 0.4595876),  // X forward, Y left, Z up
-                new Rotation3d(Math.toRadians(30), Math.toRadians(0),Math.toRadians( -90))  // Roll, pitch, yaw
-          ));
+        //     addCamera("ElevatorCam", new Transform3d(
+        //         new Translation3d(-0.1725676, -0.2653792, 0.4595876),  // X forward, Y left, Z up
+        //         new Rotation3d(Math.toRadians(30), Math.toRadians(0),Math.toRadians( -90))  // Roll, pitch, yaw
+        //   ));
 
             
             

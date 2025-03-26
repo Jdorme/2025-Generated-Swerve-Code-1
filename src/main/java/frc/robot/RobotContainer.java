@@ -116,8 +116,8 @@ public class RobotContainer {
     private void configureBindings() {
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() ->
-            drive.withVelocityX(-joystick.getLeftY() * (MaxSpeed/1.5)) //Divide by 4 to reduce max speed
-                    .withVelocityY(-joystick.getLeftX() * (MaxSpeed/1.5))
+            drive.withVelocityX(-joystick.getLeftY() * (MaxSpeed/1)) //Divide by 4 to reduce max speed
+                    .withVelocityY(-joystick.getLeftX() * (MaxSpeed/1))
                     .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
             )
         );

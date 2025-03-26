@@ -45,11 +45,11 @@ public static final class ArmConstants {
 public static final class SafetyConstants{
         //------------Setpoints---------------
                 // (elevator height, arm angle)
-                public static final double[] STOWED = {14, 0.0};
-                public static final double[] L4 = {29.7,45};
-                public static final double[] L3 = {16.25, 34};
-                public static final double[] L2 = {10.0, 45};
-                public static final double[] PICKUP = {17.5, -125};
+                public static final double[] STOWED = {4, 0.0};
+                public static final double[] L4 = {23.25,53};
+                public static final double[] L3 = {8.5, 34};
+                public static final double[] L2 = {2.5, 45};
+                public static final double[] PICKUP = {8, -115};
                 
                 public static final double[] L3_ALGAE = {20.5, -110};
                 public static final double[] L2_ALGAE = {17, -80};
