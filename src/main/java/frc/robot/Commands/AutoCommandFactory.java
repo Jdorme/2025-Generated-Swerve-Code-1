@@ -14,7 +14,7 @@ import frc.robot.Commands.CoralCommands.L2ScoreCommand;
 import frc.robot.Commands.CoralCommands.L3ScoreCommand;
 import frc.robot.Commands.CoralCommands.L4ScoreCommand;
 import frc.robot.Commands.CoralCommands.AutoCoralIntakeCommand;
-import frc.robot.Commands.CoralCommands.AutoElevatorL4Command;
+import frc.robot.Commands.CoralCommands.AutoElevatorArmL4Command;
 import frc.robot.Commands.CoralCommands.AutoL4ScoreCommand;
 import frc.robot.subsystems.AlgaeIntake;
 import frc.robot.subsystems.ArmSubsystem;
@@ -55,7 +55,7 @@ public class AutoCommandFactory {
             new ArmElevatorToPositionCommand(safetySystem, SafetyConstants.STOWED[0], SafetyConstants.STOWED[1]));
         NamedCommands.registerCommand("Ground Algae Position", 
             new ArmElevatorToPositionCommand(safetySystem, SafetyConstants.GROUND_ALGAE[0], SafetyConstants.GROUND_ALGAE[1]));
-        NamedCommands.registerCommand("L4Elevator", new AutoElevatorL4Command(elevator));
+        NamedCommands.registerCommand("L4Elevator", new AutoElevatorArmL4Command(elevator, arm));
         
         // Register intake actions
         NamedCommands.registerCommand("Algae Intake", Commands.run(() -> algaeIntake.intake(), algaeIntake)

@@ -20,7 +20,7 @@ public class CoralIntakeL2AlgaeCommand extends Command {
     public CoralIntakeL2AlgaeCommand(CoralIntake coralIntake, SafetySubsystem safetySubsystem) {
         this.coralIntake = coralIntake;
         this.safetySubsystem = safetySubsystem;
-        addRequirements(coralIntake);
+        addRequirements(coralIntake, safetySubsystem);
     }
 
     @Override

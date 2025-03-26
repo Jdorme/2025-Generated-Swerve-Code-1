@@ -101,17 +101,18 @@ public class AutoL4ScoreCommand extends Command {
                 if ((System.currentTimeMillis() - waitStartTime) >= (SCORING_TIME * 1000)) {
                     System.out.println("AutoL4Score: Scoring complete, moving arm back");
                     currentState = ScoreState.ARM_BACK;
-                    m_arm.setAngle(0);
+                    m_arm.setAngle(20);
                     // Do NOT stop the motor here
                 }
                 break;
             
                 case ARM_BACK:
                 // Wait for arm to fully return before moving the elevator down
-                if (isArmAtTarget(0)) {
+                if (isArmAtTarget(20)) {
                     System.out.println("AutoL4Score: Arm returned to zero, lowering elevator");
                     m_coralIntake.stop(); // Stop intake before moving the elevator
-                    m_elevator.setHeight(SafetyConstants.STOWED[0]); // Start lowering elevator
+                    m_elevator.setHeight(SafetyConstants.STOWED[0]);
+                    m_arm.setAngle(SafetyConstants.STOWED[1]); // Start lowering elevator
                     currentState = ScoreState.DONE; // Mark command as finished without waiting for elevator
                 }
                 break;

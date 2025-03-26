@@ -18,7 +18,7 @@ public class AutoCoralIntakeCommand extends Command {
     private Timer initialDelayTimer = new Timer();
     private final double INTAKE_CONTINUE_DURATION = 0.5; // Half a second
     private final double HOLD_BACK_DURATION = 0; // Time to hold coral at the back
-    private final double INITIAL_DELAY_DURATION = .5; // .5 second initial delay
+    private final double INITIAL_DELAY_DURATION = 1; // .5 second initial delay
     private boolean hasDelayElapsed = false;
 
     public AutoCoralIntakeCommand(CoralIntake coralIntake, SafetySubsystem safetySubsystem) {
@@ -44,52 +44,42 @@ public class AutoCoralIntakeCommand extends Command {
 
     @Override
     public void execute() {
-        // Wait for the initial delay to elapse
-        if (!hasDelayElapsed && initialDelayTimer.hasElapsed(INITIAL_DELAY_DURATION)) {
-            hasDelayElapsed = true;
-            // Only set target position after delay has elapsed
-            safetySubsystem.setTargetPosition(
-                Constants.SafetyConstants.PICKUP[0], 
-                Constants.SafetyConstants.PICKUP[1]
-            );
-            hasSetTargetPosition = true;
-        }
-        
-        // Only proceed with normal execution after the delay has elapsed
-        if (!hasDelayElapsed) {
-            return;
-        }
-
-        // Start intaking if safety mechanism is at target and not already intaking
-        if (hasSetTargetPosition && safetySubsystem.isAtTarget() && !hasStartedIntake) {
-            coralIntake.intakeCoral();
-            hasStartedIntake = true;
-        }
-
-        // Check if coral is detected and start timer if true
-        if (coralIntake.hasCoral() && !hasDetectedCoral) {
-            hasDetectedCoral = true;
-            coralDetectionTimer.start();
-            
-            // Start moving to stow position immediately
-            safetySubsystem.setTargetPosition(
-                Constants.SafetyConstants.STOWED[0], 
-                Constants.SafetyConstants.STOWED[1]
-            );
-        }
-        
-        // Hold the coral back at the end of the intake
-        if (hasDetectedCoral && coralDetectionTimer.hasElapsed(INTAKE_CONTINUE_DURATION) && !hasStartedHoldBack) {
-            coralIntake.holdBack(); // Use the new holdBack feature
-            hasStartedHoldBack = true;
-            holdBackTimer.start();
-        }
-        
-        // After holding back for a short duration, go to normal hold
-        if (hasStartedHoldBack && holdBackTimer.hasElapsed(HOLD_BACK_DURATION)) {
-            coralIntake.normalHold();
-        }
+            // Wait for the initial delay to elapse
+    if (!hasDelayElapsed && initialDelayTimer.hasElapsed(INITIAL_DELAY_DURATION)) {
+        hasDelayElapsed = true;
+        // Only set target position after delay has elapsed
+        safetySubsystem.setTargetPosition(
+            Constants.SafetyConstants.PICKUP[0], 
+            Constants.SafetyConstants.PICKUP[1]
+        );
+        hasSetTargetPosition = true;
     }
+    
+    // Only proceed with normal execution after the delay has elapsed
+    if (!hasDelayElapsed) {
+        return;
+    }
+
+    // Start intaking if safety mechanism is at target and not already intaking
+    if (hasSetTargetPosition && safetySubsystem.isAtTarget() && !hasStartedIntake) {
+        coralIntake.intakeCoral();
+        hasStartedIntake = true;
+    }
+
+    // Check if coral is detected
+    if (coralIntake.hasCoral() && !hasDetectedCoral) {
+        hasDetectedCoral = true;
+        
+        // Start moving to stow position immediately
+        safetySubsystem.setTargetPosition(
+            Constants.SafetyConstants.STOWED[0], 
+            Constants.SafetyConstants.STOWED[1]
+        );
+        
+        // Use normalHold directly instead of using holdBack
+        coralIntake.normalHold();
+    }
+}
 
     @Override
     public void end(boolean interrupted) {
@@ -112,11 +102,6 @@ public class AutoCoralIntakeCommand extends Command {
     @Override
     public boolean isFinished() {
         // Command ends when coral is detected, both timers have elapsed, and mechanism is stowed
-        return hasDelayElapsed && 
-               hasDetectedCoral && 
-               coralDetectionTimer.hasElapsed(INTAKE_CONTINUE_DURATION) &&
-               hasStartedHoldBack &&
-               holdBackTimer.hasElapsed(HOLD_BACK_DURATION) &&
-               safetySubsystem.isAtTarget();
+        return hasDelayElapsed && hasDetectedCoral;
     }
 }

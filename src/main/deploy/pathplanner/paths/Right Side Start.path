@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.217,
-        "y": 1.578
+        "x": 6.989717741935484,
+        "y": 1.6814112903225793
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.134942896007975,
-        "y": 1.8847454828004775
+        "x": 6.271848901367858,
+        "y": 2.4221522409638547
       },
       "isLocked": false,
       "linkedName": null
@@ -20,8 +20,8 @@
         "y": 3.0298220198675496
       },
       "prevControl": {
-        "x": 5.635630894053102,
-        "y": 2.3214849399665254
+        "x": 5.434104680415557,
+        "y": 2.9224422557779848
       },
       "nextControl": null,
       "isLocked": false,
@@ -47,11 +47,11 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.5,
-    "maxAcceleration": 3.0,
+    "maxVelocity": 3.75,
+    "maxAcceleration": 3.75,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
-    "nominalVoltage": 12.7,
+    "nominalVoltage": 12.0,
     "unlimited": false
   },
   "goalEndState": {
@@ -62,7 +62,7 @@
   "folder": "Amarillo Right",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -107.42986281766798
+    "rotation": -134.04515874612792
   },
-  "useDefaultConstraints": false
+  "useDefaultConstraints": true
 }
