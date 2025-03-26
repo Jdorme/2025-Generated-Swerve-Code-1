@@ -23,7 +23,7 @@ public class AutoElevatorArmL4Command extends Command {
     private static final double ARM_TOLERANCE = 2.0; // degrees
     
     // Delay variables
-    private static final double DELAY_SECONDS = 0.5; // 0.5 second delay
+    private static final double DELAY_SECONDS = .25; // 0.5 second delay
     private double startTime;
     
     public AutoElevatorArmL4Command(ElevatorSubsystem elevator, ArmSubsystem arm) {
@@ -80,7 +80,8 @@ public class AutoElevatorArmL4Command extends Command {
                 if (elapsedTime >= DELAY_SECONDS) {
                     System.out.println("ElevatorArmL4: Delay complete, now setting elevator height");
                     m_elevator.setHeight(SafetyConstants.L4[0]);
-                    currentState = SetupState.ELEVATOR_UP;
+                    m_arm.setAngle(SafetyConstants.L4[1]);
+                    currentState = SetupState.READY_TO_SCORE;
                 }
                 break;
                 

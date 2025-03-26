@@ -18,7 +18,7 @@ public class AutoCoralIntakeCommand extends Command {
     private Timer initialDelayTimer = new Timer();
     private final double INTAKE_CONTINUE_DURATION = 0.5; // Half a second
     private final double HOLD_BACK_DURATION = 0; // Time to hold coral at the back
-    private final double INITIAL_DELAY_DURATION = 1; // .5 second initial delay
+    private final double INITIAL_DELAY_DURATION = .5; // .5 second initial delay
     private boolean hasDelayElapsed = false;
 
     public AutoCoralIntakeCommand(CoralIntake coralIntake, SafetySubsystem safetySubsystem) {

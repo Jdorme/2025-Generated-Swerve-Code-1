@@ -55,14 +55,14 @@ public class PhotonVisionSubsystem extends SubsystemBase {
             // Load the 2024 field layout
             fieldLayout = AprilTagFields.k2025ReefscapeAndyMark.loadAprilTagLayoutField();
             
-            // Add cameras - update names to match your configuration
+            //Add cameras - update names to match your configuration
             addCamera("EndGameCam", new Transform3d(
               new Translation3d(0.232029, -0.1676654, 0.3151886),  // X forward, Y left, Z up
               new Rotation3d(Math.toRadians(5), Math.toRadians(0),Math.toRadians( -104.9)) ));// Roll, pitch, yaw
-        //     addCamera("ElevatorCam", new Transform3d(
-        //         new Translation3d(-0.1725676, -0.2653792, 0.4595876),  // X forward, Y left, Z up
-        //         new Rotation3d(Math.toRadians(30), Math.toRadians(0),Math.toRadians( -90))  // Roll, pitch, yaw
-        //   ));
+             addCamera("ElevatorCam", new Transform3d(
+                new Translation3d(-0.1725676, -0.2653792, 0.4595876),  // X forward, Y left, Z up
+                new Rotation3d(Math.toRadians(0), Math.toRadians(30),Math.toRadians( -90))  // Roll, pitch, yaw
+          ));
 
             
             
