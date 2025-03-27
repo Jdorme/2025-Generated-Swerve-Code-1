@@ -77,16 +77,17 @@ public class SafeInitializationCommand extends Command {
         switch (currentState) {
             case CHECK_POSITION:
                 // Determine what safety measures are needed based on current positions
-                if (currentHeight < DANGER_ZONE_HEIGHT) {
-                    // Elevator is too low - need to raise it first for safety
-                    System.out.println("SafeInit: Elevator in danger zone, raising to safe height first");
-                    m_elevator.setHeight(SAFE_HEIGHT);
-                    currentState = InitState.ELEVATOR_UP;
-                } else if (currentHeight > MAX_SAFE_ELEVATOR_HEIGHT && Math.abs(currentAngle) > 0) {
+                
+                if (currentHeight > MAX_SAFE_ELEVATOR_HEIGHT && Math.abs(currentAngle) > 0) {
                     // Elevator is above 8 inches, but arm is not at 0 degrees, rotate arm first
                     System.out.println("SafeInit: Elevator is high, arm not at 0, rotating arm first");
                     currentState = InitState.ARM_FIRST;
                     m_arm.setAngle(0); // Rotate arm to 0 degrees
+                }else if (currentHeight < DANGER_ZONE_HEIGHT) {
+                    // Elevator is too low - need to raise it first for safety
+                    System.out.println("SafeInit: Elevator in danger zone, raising to safe height first");
+                    m_elevator.setHeight(SAFE_HEIGHT);
+                    currentState = InitState.ELEVATOR_UP;
                 } else if (Math.abs(currentAngle) > 45.0) {
                     // Arm is at a dangerous angle but elevator is high enough
                     System.out.println("SafeInit: Arm at dangerous angle, moving to safe position");

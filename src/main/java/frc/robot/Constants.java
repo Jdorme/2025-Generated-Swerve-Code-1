@@ -51,10 +51,10 @@ public static final class SafetyConstants{
                 public static final double[] L2 = {2.5, 45};
                 public static final double[] PICKUP = {7.75, -115};
                 
-                public static final double[] L3_ALGAE = {20.5, -110};
-                public static final double[] L2_ALGAE = {17, -80};
+                public static final double[] L3_ALGAE = {12, -110};
+                public static final double[] L2_ALGAE = {8, -80};
                 public static final double[] GROUND_ALGAE = {8, -75};
-                public static final double[] PROCESSOR_ALGAE = {8, -90};
+                public static final double[] PROCESSOR_ALGAE = {0, -80};
                 public static final double[] NET_ALGAE = {0, 0};
 
                 public static final double[] CLIMB_POSITION = {0, 90};

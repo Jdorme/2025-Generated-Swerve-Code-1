@@ -22,7 +22,8 @@ public class CoralIntake extends SubsystemBase {
 
     // Sensor thresholds
     private static final double CORAL_DETECTION_THRESHOLD = .12;
-    private static final double AMBIENT_THRESHOLD = 50.0;
+    private static final double CORAL_NON_DETECTION_THRESHOLD = .09;
+    private static final double AMBIENT_THRESHOLD = 10.0;
 
     // System state
     private enum IntakeState {
