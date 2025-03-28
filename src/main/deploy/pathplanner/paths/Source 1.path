@@ -51,7 +51,7 @@
     "maxAcceleration": 3.75,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
-    "nominalVoltage": 12.5,
+    "nominalVoltage": 12.0,
     "unlimited": false
   },
   "goalEndState": {
@@ -64,5 +64,5 @@
     "velocity": 0,
     "rotation": -29.47588900324579
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

@@ -3,9 +3,9 @@
   "robotLength": 0.864,
   "holonomicMode": true,
   "pathFolders": [
+    "Amarillo Center",
     "Amarillo Left",
     "Amarillo Right",
-    "Amarillo Center",
     "Waco"
   ],
   "autoFolders": [

@@ -37,7 +37,7 @@ public class EndgameLiftSubsystem extends SubsystemBase {
         
         // Configure soft limits
         motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 65.165039;
+        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 58.565039;
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -82;
         
