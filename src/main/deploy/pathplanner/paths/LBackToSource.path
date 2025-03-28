@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.988,
-        "y": 5.205
+        "x": 4.062,
+        "y": 5.165
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.309444202254018,
-        "y": 5.903023369005286
+        "x": 3.716672190521629,
+        "y": 5.83859635161746
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.365,
-        "y": 7.48625
+        "x": 1.530749999995923,
+        "y": 7.349749999995206
       },
       "prevControl": {
-        "x": 1.9389403785140296,
-        "y": 6.939793401583717
+        "x": 2.1046903785099533,
+        "y": 6.803293401578923
       },
       "nextControl": null,
       "isLocked": false,
@@ -62,7 +62,7 @@
   "folder": "Amarillo Left",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 33.42481118260387
+    "rotation": 32.65297248403432
   },
   "useDefaultConstraints": true
 }
