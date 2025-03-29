@@ -31,7 +31,6 @@ public static final class ElevatorConstants {
 
     public static final int encoder1DIO = 3; //??????
 
-    
     //------------Setpoints---------------
     public static final double BOTTOM_POSITION = 0.0;
     public static final double MIDDLE_POSITION = 11.0;
@@ -50,7 +49,7 @@ public static final class SafetyConstants{
                 public static final double[] L4 = {23.25,53};
                 public static final double[] L3 = {8.5, 34};
                 public static final double[] L2 = {2.5, 45};
-                public static final double[] PICKUP = {7.75, -115};
+                public static final double[] PICKUP = {8.25, -115};
                 
                 public static final double[] L3_ALGAE = {12, -110};
                 public static final double[] L2_ALGAE = {8, -80};
