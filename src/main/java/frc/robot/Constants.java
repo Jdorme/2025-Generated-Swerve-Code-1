@@ -73,7 +73,7 @@ public static final class EndgameLiftConstants {
     // Control constants
     public static final double LIFT_UP_SPEED = 1; // 100% speed up
     public static final double LIFT_DOWN_SPEED = -1; // 100% speed down
-    
+                                                                                              
     // PID Constants
     public static final class PIDConstants {
         public static final double kP = 0.1;
