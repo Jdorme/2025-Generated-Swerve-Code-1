@@ -115,12 +115,12 @@ public class RobotContainer {
 
     private void configureBindings() {
         drivetrain.setDefaultCommand(
-            drivetrain.applyRequest(() ->
-            drive.withVelocityX(-joystick.getLeftY() * (MaxSpeed/1.5)) //Divide by 4 to reduce max speed
-                    .withVelocityY(-joystick.getLeftX() * (MaxSpeed/1.5))
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
-            )
-        );
+        drivetrain.applyRequest(() ->
+        drive.withVelocityX(applyJoystickCurve(-joystick.getLeftY()) * (MaxSpeed/1.75))
+             .withVelocityY(applyJoystickCurve(-joystick.getLeftX()) * (MaxSpeed/1.75))
+             .withRotationalRate(applyJoystickCurve(-joystick.getRightX()) * MaxAngularRate)
+    )
+);
      
         m_algaeIntake.setDefaultCommand(
             new RunCommand(
@@ -202,6 +202,20 @@ public class RobotContainer {
         //         ).schedule()
         //     )
         // );
+    }
+
+    private double applyJoystickCurve(double input) {
+        // Preserve the sign of the input
+        double sign = Math.signum(input);
+        // Take the absolute value to work with positive numbers
+        double absInput = Math.abs(input);
+        
+        // Apply a power curve (squared) for reduced sensitivity at lower inputs
+        // This makes the joystick less sensitive near center, allowing for finer control at low speeds
+        double adjustedValue = Math.pow(absInput, 2);
+        
+        // Return the adjusted value with the original sign
+        return sign * adjustedValue;
     }
 
     public Command getAutonomousCommand() {
