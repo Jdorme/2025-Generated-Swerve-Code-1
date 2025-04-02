@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -15,7 +16,7 @@ public class AlgaeIntake extends SubsystemBase {
     private static final double CURRENT_LIMIT = 40.0;
 
     // Control constants
-    private static final double INTAKE_SPEED = 0.2;  // Using new, lower speed
+    private static final double INTAKE_SPEED = 1;  // Using new, lower speed
     private static final double REVERSE_SPEED = -1.0;
     private static final double HOLD_SPEED = 0.05;
 
@@ -73,7 +74,8 @@ public class AlgaeIntake extends SubsystemBase {
         motorConfig.Feedback.SensorToMechanismRatio = PULLEY_RATIO;
         motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         motorConfig.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
-        
+        motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+
         intakeMotor.getConfigurator().apply(motorConfig);
         intakeMotor.setNeutralMode(NeutralModeValue.Brake);
     }
