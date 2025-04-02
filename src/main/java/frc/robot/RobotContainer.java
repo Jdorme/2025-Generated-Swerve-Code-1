@@ -49,9 +49,9 @@ public class RobotContainer {
     private double MaxAngularRate = RotationsPerSecond.of(0.65).in(RadiansPerSecond);
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1)
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+    .withDeadband(MaxSpeed * 0.03)  // Reduced from 0.1 to 0.03
+    .withRotationalDeadband(MaxAngularRate * 0.03)  // Reduced from 0.1 to 0.03
+    .withDriveRequestType(DriveRequestType.OpenLoopVoltage);    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -116,8 +116,8 @@ public class RobotContainer {
     private void configureBindings() {
         drivetrain.setDefaultCommand(
         drivetrain.applyRequest(() ->
-        drive.withVelocityX(applyJoystickCurve(-joystick.getLeftY()) * (MaxSpeed/1.75))
-             .withVelocityY(applyJoystickCurve(-joystick.getLeftX()) * (MaxSpeed/1.75))
+        drive.withVelocityX(applyJoystickCurve(-joystick.getLeftY()) * (MaxSpeed/1.875))
+             .withVelocityY(applyJoystickCurve(-joystick.getLeftX()) * (MaxSpeed/1.875))
              .withRotationalRate(applyJoystickCurve(-joystick.getRightX()) * MaxAngularRate)
     )
 );
@@ -151,9 +151,9 @@ public class RobotContainer {
         joystick.povUp().onTrue(new L4ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povLeft().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povDown().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
-        joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 14.0, 0));
+        joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 4.0, 0));
         
-        joystick.back().onTrue(new ArmClimbPositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
+        joystick.a().onTrue(new ArmClimbPositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
 
 
         // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -169,7 +169,7 @@ public class RobotContainer {
         joystick.y().onTrue(new L3AlgaeCommand(m_safetySystem, m_algaeIntake));
         
         // Button to move to processor position
-        joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
+        //joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
 
         
         // Button to move to net position
