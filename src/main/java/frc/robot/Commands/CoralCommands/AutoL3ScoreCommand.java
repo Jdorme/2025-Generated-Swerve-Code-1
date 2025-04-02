@@ -1,33 +1,142 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.Commands.CoralCommands;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Constants;
+import frc.robot.Constants.SafetyConstants;
+import frc.robot.subsystems.SafetySubsystem;
+import frc.robot.subsystems.CoralIntake;
+import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem;
 
-/* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class AutoL3ScoreCommand extends Command {
-  /** Creates a new AutoL3ScoreCommand. */
-  public AutoL3ScoreCommand() {
-    // Use addRequirements() here to declare subsystem dependencies.
-  }
+    private enum ScoreState {
+        ELEVATOR_UP,           // Moving elevator to scoring height
+        ARM_TO_SCORE,          // Moving arm to scoring angle
+        SCORING,               // Running coral in reverse
+        ARM_BACK,              // Moving arm back to zero
+        DONE                   // Complete
+    }
 
-  // Called when the command is initially scheduled.
-  @Override
-  public void initialize() {}
+    private final SafetySubsystem m_safetySystem;
+    private final CoralIntake m_coralIntake;
+    private final ElevatorSubsystem m_elevator;
+    private final ArmSubsystem m_arm;
+    private ScoreState currentState = ScoreState.ELEVATOR_UP;
+    private double waitStartTime = 0;
+    
+    // Position tolerances
+    private static final double ELEVATOR_TOLERANCE = 0.5; // inches
+    private static final double ARM_TOLERANCE = 2.0; // degrees
+    private static final double SCORING_TIME = .125; // seconds
+    
+    public AutoL3ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
+                         ElevatorSubsystem elevator, ArmSubsystem arm) {
+        m_safetySystem = safetySystem;
+        m_coralIntake = coralIntake;
+        m_elevator = elevator;
+        m_arm = arm;
+        addRequirements(safetySystem, coralIntake);
+    }
 
-  // Called every time the scheduler runs while the command is scheduled.
-  @Override
-  public void execute() {}
+    @Override
+    public void initialize() {
+        System.out.println("AutoL3Score: Starting command");
+        currentState = ScoreState.ELEVATOR_UP;
+        // Start by moving elevator to L3 height
+        m_elevator.setHeight(SafetyConstants.L3[0]);
+        m_arm.setAngle(0); // Ensure arm is at zero while elevator moves
+    }
 
-  // Called once the command ends or is interrupted.
-  @Override
-  public void end(boolean interrupted) {}
+    private boolean isElevatorAtTarget() {
+        double currentHeight = m_elevator.getCurrentHeight();
+        double targetHeight = SafetyConstants.L3[0];
+        boolean atTarget = Math.abs(currentHeight - targetHeight) <= ELEVATOR_TOLERANCE;
+        
+        SmartDashboard.putNumber("AutoL3Score/CurrentHeight", currentHeight);
+        SmartDashboard.putNumber("AutoL3Score/TargetHeight", targetHeight);
+        SmartDashboard.putNumber("AutoL3Score/HeightError", Math.abs(currentHeight - targetHeight));
+        
+        return atTarget;
+    }
 
-  // Returns true when the command should end.
-  @Override
-  public boolean isFinished() {
-    return false;
-  }
+    private boolean isArmAtTarget(double targetAngle) {
+        double currentAngle = m_arm.getCurrentAngle();
+        boolean atTarget = Math.abs(currentAngle - targetAngle) <= ARM_TOLERANCE;
+        
+        SmartDashboard.putNumber("AutoL3Score/CurrentAngle", currentAngle);
+        SmartDashboard.putNumber("AutoL3Score/TargetAngle", targetAngle);
+        SmartDashboard.putNumber("AutoL3Score/AngleError", Math.abs(currentAngle - targetAngle));
+        
+        return atTarget;
+    }
+
+    @Override
+    public void execute() {
+        SmartDashboard.putString("AutoL3Score/State", currentState.toString());
+
+        switch (currentState) {
+            case ELEVATOR_UP:
+                // Wait for elevator to reach L3 height
+                if (isElevatorAtTarget()) {
+                    System.out.println("AutoL3Score: Elevator at height, moving arm");
+                    currentState = ScoreState.ARM_TO_SCORE;
+                    
+                }
+                break;
+
+            case ARM_TO_SCORE:
+                // Wait for arm to reach scoring angle
+                m_arm.setAngle(SafetyConstants.L3[1]);
+                if (isArmAtTarget(SafetyConstants.L3[1])) {
+                    System.out.println("AutoL3Score: Arm at scoring angle, starting coral");
+                    currentState = ScoreState.SCORING;
+                    m_coralIntake.reverse();
+                    waitStartTime = System.currentTimeMillis();
+                }
+                break;
+
+                case SCORING:
+                // Wait for scoring time
+                if ((System.currentTimeMillis() - waitStartTime) >= (SCORING_TIME * 1000)) {
+                    System.out.println("AutoL3Score: Scoring complete, moving arm back");
+                    currentState = ScoreState.ARM_BACK;
+                    m_arm.setAngle(20);
+                    // Do NOT stop the motor here
+                }
+                break;
+            
+                case ARM_BACK:
+                // Wait for arm to fully return before moving the elevator down
+                if (isArmAtTarget(20)) {
+                    System.out.println("AutoL3Score: Arm returned to zero, lowering elevator");
+                    m_coralIntake.stop(); // Stop intake before moving the elevator
+                    m_elevator.setHeight(SafetyConstants.STOWED[0]);
+                    m_arm.setAngle(SafetyConstants.STOWED[1]); // Start lowering elevator
+                    currentState = ScoreState.DONE; // Mark command as finished without waiting for elevator
+                }
+                break;
+
+            case DONE:
+                break;
+        }
+    }
+
+    @Override
+    public boolean isFinished() {
+        return currentState == ScoreState.DONE;
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        if (interrupted) {
+            System.out.println("AutoL3Score: Command interrupted");
+            m_coralIntake.stop();
+            // Safe return to stowed
+            m_arm.setAngle(0);
+            m_elevator.setHeight(SafetyConstants.STOWED[0]);
+        } else {
+            System.out.println("AutoL3Score: Command completed normally");
+        }
+    }
 }
