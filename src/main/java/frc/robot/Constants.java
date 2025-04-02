@@ -28,6 +28,7 @@ public static final class ElevatorConstants {
 
     public static final int elevatorMotorRID = 31;
     public static final int elevatorMotorLID = 32;
+    public static final int elevatorEncoderID = 40;
 
     public static final int encoder1DIO = 3; //??????
 
@@ -46,13 +47,13 @@ public static final class SafetyConstants{
         //------------Setpoints---------------
                 // (elevator height, arm angle)
                 public static final double[] STOWED = {4, 0.0};
-                public static final double[] L4 = {23.25,53};
-                public static final double[] L3 = {8.5, 34};
+                public static final double[] L4 = {25.25, 62};
+                public static final double[] L3 = {9, 34};
                 public static final double[] L2 = {2.5, 45};
-                public static final double[] PICKUP = {8, -115};
+                public static final double[] PICKUP = {8.75, -115};
                 
-                public static final double[] L3_ALGAE = {12, -110};
-                public static final double[] L2_ALGAE = {8, -80};
+                public static final double[] L3_ALGAE = {9, -105};
+                public static final double[] L2_ALGAE = {0, -110};
                 public static final double[] GROUND_ALGAE = {8, -75};
                 public static final double[] PROCESSOR_ALGAE = {0, -80};
                 public static final double[] NET_ALGAE = {0, 0};
@@ -140,9 +141,9 @@ public static final class MotionMagicConstants {
         private static final double TEST_JERK = 200;           // 25% of competition speed
 
         // Competition speeds (faster)
-        private static final double COMP_CRUISE_VELOCITY = 90;//120
-        private static final double COMP_ACCELERATION = 70;//80
-        private static final double COMP_JERK = 1000;
+        private static final double COMP_CRUISE_VELOCITY = 160;//120
+        private static final double COMP_ACCELERATION = 120;//80
+        private static final double COMP_JERK = 1900;
 
         // Getter methods that return the appropriate speed based on mode
         public static double getCruiseVelocity() {
@@ -165,8 +166,8 @@ public static final class MotionMagicConstants {
         private static final double TEST_JERK = 300;           
 
         // Competition speeds (faster)
-        private static final double COMP_CRUISE_VELOCITY = 220;
-        private static final double COMP_ACCELERATION = 150;
+        private static final double COMP_CRUISE_VELOCITY = 250;
+        private static final double COMP_ACCELERATION = 180;
         private static final double COMP_JERK = 1900;
 
         // Getter methods that return the appropriate speed based on mode
