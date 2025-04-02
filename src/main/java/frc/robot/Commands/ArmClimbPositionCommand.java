@@ -24,8 +24,8 @@ public class ArmClimbPositionCommand extends Command {
     private IntakeState currentState = IntakeState.MOVE_TO_STOW;
     private boolean wasLastStateBallPresent = false;
     
-    private static final double ELEVATOR_TOLERANCE = 0.5; // inches
-    private static final double ARM_TOLERANCE = 2.0; // degrees
+    private static final double ELEVATOR_TOLERANCE = 1; // inches
+    private static final double ARM_TOLERANCE = 10; // degrees
     
     public ArmClimbPositionCommand(SafetySubsystem safetySystem, ArmSubsystem arm, 
                                    ElevatorSubsystem elevator, AlgaeIntake algaeIntake) {
@@ -40,7 +40,7 @@ public class ArmClimbPositionCommand extends Command {
     public void initialize() {
         System.out.println("ClimbPosition: Starting command - using safety system to move to stow first");
         currentState = IntakeState.MOVE_TO_STOW;
-        wasLastStateBallPresent = false;
+       // wasLastStateBallPresent = false;
         
         // First step: Move to stowed position using the safety subsystem
         // This ensures proper sequencing when coming from a low position
