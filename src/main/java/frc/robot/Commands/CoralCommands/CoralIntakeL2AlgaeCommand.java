@@ -29,7 +29,9 @@ public class CoralIntakeL2AlgaeCommand extends Command {
         safetySubsystem.setTargetPosition(
             Constants.SafetyConstants.PICKUP[0], 
             Constants.SafetyConstants.PICKUP[1]
+            
         );
+        coralIntake.intakeCoral();
         hasStartedIntake = false;
         hasDetectedCoral = false;
         hasStartedHoldBack = false;
