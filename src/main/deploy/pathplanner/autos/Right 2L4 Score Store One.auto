@@ -122,6 +122,25 @@
           "data": {
             "name": "AutoL3ScoreCommand"
           }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoCoralIntakeCommand"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "New Path"
+                }
+              }
+            ]
+          }
         }
       ]
     }

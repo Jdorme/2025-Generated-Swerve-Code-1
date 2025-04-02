@@ -8,20 +8,20 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.560405737704918,
-        "y": 0.9550184426229513
+        "x": 1.5948273011443161,
+        "y": 1.3479970223571176
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.2246926229508195,
-        "y": 3.9950307377049183
+        "x": 3.687,
+        "y": 3.004
       },
       "prevControl": {
-        "x": 2.4814549180327874,
-        "y": 4.1748463114754095
+        "x": 3.5867258997234526,
+        "y": 2.7749910376999867
       },
       "nextControl": null,
       "isLocked": false,
@@ -32,11 +32,11 @@
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 0.769707207207192,
+      "minWaypointRelativePos": 0.6503378378378377,
       "maxWaypointRelativePos": 1.0,
       "constraints": {
-        "maxVelocity": 2.5,
-        "maxAcceleration": 2.5,
+        "maxVelocity": 2.0,
+        "maxAcceleration": 2.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
         "nominalVoltage": 12.5,
@@ -51,12 +51,12 @@
     "maxAcceleration": 3.75,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
-    "nominalVoltage": 12.5,
+    "nominalVoltage": 12.2,
     "unlimited": false
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 90.89517371021104
+    "rotation": 151.18920625702688
   },
   "reversed": false,
   "folder": "Amarillo Right",
