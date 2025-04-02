@@ -14,7 +14,9 @@ import frc.robot.Commands.CoralCommands.L2ScoreCommand;
 import frc.robot.Commands.CoralCommands.L3ScoreCommand;
 import frc.robot.Commands.CoralCommands.L4ScoreCommand;
 import frc.robot.Commands.CoralCommands.AutoCoralIntakeCommand;
+import frc.robot.Commands.CoralCommands.AutoElevatorArmL3Command;
 import frc.robot.Commands.CoralCommands.AutoElevatorArmL4Command;
+import frc.robot.Commands.CoralCommands.AutoL3ScoreCommand;
 import frc.robot.Commands.CoralCommands.AutoL4ScoreCommand;
 import frc.robot.subsystems.AlgaeIntake;
 import frc.robot.subsystems.ArmSubsystem;
@@ -43,6 +45,8 @@ public class AutoCommandFactory {
         NamedCommands.registerCommand("Score L3", new L3ScoreCommand(safetySystem, coralIntake, elevator, arm));
         NamedCommands.registerCommand("Score L4", new L4ScoreCommand(safetySystem, coralIntake, elevator, arm));
         NamedCommands.registerCommand("AutoL4ScoreCommand", new AutoL4ScoreCommand(safetySystem, coralIntake, elevator, arm));
+        NamedCommands.registerCommand("AutoL3ScoreCommand", new AutoL3ScoreCommand(safetySystem, coralIntake, elevator, arm));
+
         
 
         // Register intake commands
@@ -56,6 +60,8 @@ public class AutoCommandFactory {
         NamedCommands.registerCommand("Ground Algae Position", 
             new ArmElevatorToPositionCommand(safetySystem, SafetyConstants.GROUND_ALGAE[0], SafetyConstants.GROUND_ALGAE[1]));
         NamedCommands.registerCommand("L4Elevator", new AutoElevatorArmL4Command(elevator, arm));
+        NamedCommands.registerCommand("L3Elevator", new AutoElevatorArmL3Command(elevator, arm));
+
         
         // Register intake actions
         NamedCommands.registerCommand("Algae Intake", Commands.run(() -> algaeIntake.intake(), algaeIntake)
@@ -70,5 +76,7 @@ public class AutoCommandFactory {
         NamedCommands.registerCommand("Coral Stop", Commands.runOnce(() -> coralIntake.stop(), coralIntake));
         NamedCommands.registerCommand("Coral Reverse", Commands.run(() -> coralIntake.reverse(), coralIntake)
             .withTimeout(1.0));
+
+        
     }
 }

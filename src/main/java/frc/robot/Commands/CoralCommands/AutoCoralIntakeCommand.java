@@ -40,6 +40,7 @@ public class AutoCoralIntakeCommand extends Command {
         holdBackTimer.reset();
         initialDelayTimer.reset();
         initialDelayTimer.start();
+        coralIntake.intakeCoral();
     }
 
     @Override
@@ -52,6 +53,7 @@ public class AutoCoralIntakeCommand extends Command {
             Constants.SafetyConstants.PICKUP[0], 
             Constants.SafetyConstants.PICKUP[1]
         );
+        coralIntake.intakeCoral();
         hasSetTargetPosition = true;
     }
     
