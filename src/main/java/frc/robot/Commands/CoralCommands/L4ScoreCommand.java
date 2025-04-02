@@ -28,7 +28,7 @@ public class L4ScoreCommand extends Command {
     // Position tolerances
     private static final double ELEVATOR_TOLERANCE = 0.5; // inches
     private static final double ARM_TOLERANCE = 2.0; // degrees
-    private static final double SCORING_TIME = .1250; // seconds
+    private static final double SCORING_TIME = .25; // seconds
     
     public L4ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
                          ElevatorSubsystem elevator, ArmSubsystem arm) {
@@ -36,7 +36,8 @@ public class L4ScoreCommand extends Command {
         m_coralIntake = coralIntake;
         m_elevator = elevator;
         m_arm = arm;
-        addRequirements(safetySystem, coralIntake);
+        // Add all subsystems as requirements to prevent command conflicts
+        addRequirements(safetySystem, coralIntake, elevator, arm);
     }
 
     @Override
@@ -45,16 +46,29 @@ public class L4ScoreCommand extends Command {
         currentState = ScoreState.ELEVATOR_UP;
         // Start by moving elevator to L4 height
         m_elevator.setHeight(SafetyConstants.L4[0]);
-        m_arm.setAngle(0); // Ensure arm is at zero while elevator moves
+        m_arm.setAngle(34); // Ensure arm is at zero while elevator moves
     }
 
     private boolean isElevatorAtTarget() {
         double currentHeight = m_elevator.getCurrentHeight();
+        // Use the actual target height from constants instead of hardcoded value
         double targetHeight = SafetyConstants.L4[0];
         boolean atTarget = Math.abs(currentHeight - targetHeight) <= ELEVATOR_TOLERANCE;
         
         SmartDashboard.putNumber("L4Score/CurrentHeight", currentHeight);
         SmartDashboard.putNumber("L4Score/TargetHeight", targetHeight);
+        SmartDashboard.putNumber("L4Score/HeightError", Math.abs(currentHeight - targetHeight));
+        
+        return atTarget;
+    }
+
+    private boolean isElevatorAtStowedTarget() {
+        double currentHeight = m_elevator.getCurrentHeight();
+        double targetHeight = SafetyConstants.STOWED[0];
+        boolean atTarget = Math.abs(currentHeight - targetHeight) <= ELEVATOR_TOLERANCE;
+        
+        SmartDashboard.putNumber("L4Score/CurrentHeight", currentHeight);
+        SmartDashboard.putNumber("L4Score/StowedHeight", targetHeight);
         SmartDashboard.putNumber("L4Score/HeightError", Math.abs(currentHeight - targetHeight));
         
         return atTarget;
@@ -100,7 +114,8 @@ public class L4ScoreCommand extends Command {
                 if ((System.currentTimeMillis() - waitStartTime) >= (SCORING_TIME * 1000)) {
                     System.out.println("L4Score: Scoring complete, moving arm back");
                     currentState = ScoreState.ARM_BACK;
-                    // No longer stopping the coral intake here
+                    // Stop the coral intake immediately after scoring
+                    m_coralIntake.stop();
                     m_arm.setAngle(0);
                 }
                 break;
@@ -108,9 +123,8 @@ public class L4ScoreCommand extends Command {
             case ARM_BACK:
                 // Wait for arm to return to zero
                 if (isArmAtTarget(0)) {
-                    System.out.println("L4Score: Arm at zero, stopping intake and lowering elevator");
-                    // Stop the coral intake only after arm is back at zero
-                    m_coralIntake.stop();
+                    System.out.println("L4Score: Arm at zero, lowering elevator");
+                    // Intake already stopped in SCORING state
                     currentState = ScoreState.ELEVATOR_STOW;
                     m_elevator.setHeight(SafetyConstants.STOWED[0]);
                 }
@@ -118,7 +132,7 @@ public class L4ScoreCommand extends Command {
 
             case ELEVATOR_STOW:
                 // Wait for elevator to reach stowed height
-                if (Math.abs(m_elevator.getCurrentHeight() - SafetyConstants.STOWED[0]) <= ELEVATOR_TOLERANCE) {
+                if (isElevatorAtStowedTarget()) {
                     System.out.println("L4Score: At stowed position, complete");
                     currentState = ScoreState.DONE;
                 }
