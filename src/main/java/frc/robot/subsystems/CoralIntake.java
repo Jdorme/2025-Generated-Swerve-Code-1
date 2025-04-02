@@ -1,8 +1,11 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXSConfiguration;
+import com.ctre.phoenix6.signals.MotorArrangementValue;
+//import com.ctre.phoenix6.hardware.TalonFXS.MotorInvertedValue;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.hardware.CANrange;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -15,13 +18,13 @@ public class CoralIntake extends SubsystemBase {
     private static final double CURRENT_LIMIT = 40.0;
 
     // Control constants
-    private static final double INTAKE_SPEED = .82; //.75
-    private static final double HOLD_SPEED = 0.1;
-    private static final double HOLD_BACK_SPEED = 1;  // Speed for holding coral at the back
-    private static final double REVERSE_SPEED = -.675;
+    private static final double INTAKE_SPEED = 1; //.75
+    private static final double HOLD_SPEED = 0.06;
+    private static final double HOLD_BACK_SPEED = 0;  // Speed for holding coral at the back
+    private static final double REVERSE_SPEED = -1;
 
     // Sensor thresholds
-    private static final double CORAL_DETECTION_THRESHOLD = .12;
+    private static final double CORAL_DETECTION_THRESHOLD = .075;
     private static final double CORAL_NON_DETECTION_THRESHOLD = .09;
     private static final double AMBIENT_THRESHOLD = 10.0;
 
@@ -34,9 +37,10 @@ public class CoralIntake extends SubsystemBase {
         REVERSING,
         ERROR
     }
+    
 
     // Hardware
-    private final TalonFX intakeMotor;
+    private final TalonFXS intakeMotor;
     private final CANrange coralSensor;
     private final DutyCycleOut dutyCycleControl;
     
@@ -49,7 +53,7 @@ public class CoralIntake extends SubsystemBase {
     private boolean isHoldingBack = false;  // New flag for holding back state
 
     public CoralIntake() {
-        intakeMotor = new TalonFX(Constants.CoralIntakeConstants.coralIntakeMotorID);
+        intakeMotor = new TalonFXS(Constants.CoralIntakeConstants.coralIntakeMotorID);
         coralSensor = new CANrange(Constants.CoralIntakeConstants.coralIntakeCANrangeID);
         dutyCycleControl = new DutyCycleOut(0);
         
@@ -61,10 +65,17 @@ public class CoralIntake extends SubsystemBase {
     }
     
     private void configureMotor() {
-        var motorConfig = new TalonFXConfiguration();
-        motorConfig.Feedback.SensorToMechanismRatio = PULLEY_RATIO;
+      //  var motorConfig = new TalonFXSConfiguration();
+        
+        // Set motor arrangement to Minion
+       // motorConfig.MotorOutput.Inverted = TalonFXS.MotorInvertedValue.CounterClockwise_Positive;
+       TalonFXSConfiguration motorConfig = new TalonFXSConfiguration();
+    motorConfig.Commutation.MotorArrangement = MotorArrangementValue.Minion_JST;
+        
+        //motorConfig.Feedback.SensorToMechanismRatio = PULLEY_RATIO;
         motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         motorConfig.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
+        
         intakeMotor.getConfigurator().apply(motorConfig);
         intakeMotor.setNeutralMode(NeutralModeValue.Brake);
     }
