@@ -43,7 +43,7 @@ public class L3ScoreCommand extends Command {
         System.out.println("L3Score: Starting command");
         currentState = ScoreState.ELEVATOR_UP;
         m_elevator.setHeight(SafetyConstants.L3[0]);
-        m_arm.setAngle(0);
+        m_arm.setAngle(SafetyConstants.L3[1]);
     }
 
     private boolean isElevatorAtTarget() {
