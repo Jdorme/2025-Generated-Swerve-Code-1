@@ -59,7 +59,7 @@ public class AutoCommandFactory {
             new ArmElevatorToPositionCommand(safetySystem, SafetyConstants.STOWED[0], SafetyConstants.STOWED[1]));
         NamedCommands.registerCommand("Ground Algae Position", 
             new ArmElevatorToPositionCommand(safetySystem, SafetyConstants.GROUND_ALGAE[0], SafetyConstants.GROUND_ALGAE[1]));
-        NamedCommands.registerCommand("L4Elevator", new AutoElevatorArmL4Command(elevator, arm));
+        NamedCommands.registerCommand("L4Elevator", new AutoElevatorArmL4Command(elevator, arm, coralIntake));
         NamedCommands.registerCommand("L3Elevator", new AutoElevatorArmL3Command(elevator, arm));
 
         

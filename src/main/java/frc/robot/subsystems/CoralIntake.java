@@ -203,6 +203,7 @@ public class CoralIntake extends SubsystemBase {
             coralSensor.getAmbientSignal().getValueAsDouble());
         SmartDashboard.putBoolean("Coral/Manual Control", manualControl);
         SmartDashboard.putBoolean("Coral/Holding Back", isHoldingBack);
+        SmartDashboard.putNumber("Coral/Coral Speed", intakeMotor.getVelocity().getValueAsDouble());
         
         if (currentState == IntakeState.ERROR) {
             SmartDashboard.putString("Coral/Error", errorMessage);

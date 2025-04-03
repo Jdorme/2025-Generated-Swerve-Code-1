@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.SafetyConstants;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.CoralIntake;
 
 public class AutoElevatorArmL4Command extends Command {
     private enum SetupState {
@@ -15,6 +16,7 @@ public class AutoElevatorArmL4Command extends Command {
     
     private final ElevatorSubsystem m_elevator;
     private final ArmSubsystem m_arm;
+    private final CoralIntake m_coralIntake;
     private SetupState currentState = SetupState.WAITING_FOR_DELAY;
     
     // Position tolerances
@@ -25,9 +27,10 @@ public class AutoElevatorArmL4Command extends Command {
     private static final double DELAY_SECONDS = .25; // 0.5 second delay
     private double startTime;
     
-    public AutoElevatorArmL4Command(ElevatorSubsystem elevator, ArmSubsystem arm) {
+    public AutoElevatorArmL4Command(ElevatorSubsystem elevator, ArmSubsystem arm, CoralIntake coralIntake) {
         m_elevator = elevator;
         m_arm = arm;
+        m_coralIntake = coralIntake;
         addRequirements(elevator, arm);
     }
 
@@ -39,6 +42,8 @@ public class AutoElevatorArmL4Command extends Command {
         
         // Ensure arm is at zero initially while we wait
         m_arm.setAngle(0);
+        m_coralIntake.setIntakeSpeed(.06);
+        
     }
 
     private boolean isElevatorAtTarget() {
@@ -80,6 +85,7 @@ public class AutoElevatorArmL4Command extends Command {
                    // System.out.println("ElevatorArmL4: Delay complete, now setting elevator height");
                     m_elevator.setHeight(SafetyConstants.L4[0]);
                     m_arm.setAngle(SafetyConstants.L4[1]);
+                    m_coralIntake.setIntakeSpeed(.06);
                     currentState = SetupState.ELEVATOR_UP_ARM_TO_SCORE;
                 }
                 break;
@@ -91,6 +97,7 @@ public class AutoElevatorArmL4Command extends Command {
                     currentState = SetupState.READY_TO_SCORE;
                     m_arm.setAngle(SafetyConstants.L4[1]);
                     m_elevator.setHeight(SafetyConstants.L4[0]);
+                    m_coralIntake.setIntakeSpeed(.06);
                     currentState = SetupState.READY_TO_SCORE;
                 }
                 break;
