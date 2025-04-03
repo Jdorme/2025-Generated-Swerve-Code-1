@@ -158,7 +158,7 @@
       ]
     }
   },
-  "resetOdom": true,
+  "resetOdom": false,
   "folder": "Amarillo",
   "choreoAuto": false
 }
