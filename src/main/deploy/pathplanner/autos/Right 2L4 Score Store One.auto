@@ -128,15 +128,28 @@
           "data": {
             "commands": [
               {
+                "type": "path",
+                "data": {
+                  "pathName": "R Back for algae"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
                 "type": "named",
                 "data": {
-                  "name": "AutoCoralIntakeCommand"
+                  "name": "Intake Algae L2"
                 }
               },
               {
                 "type": "path",
                 "data": {
-                  "pathName": "New Path"
+                  "pathName": "R take off algae"
                 }
               }
             ]
@@ -145,7 +158,7 @@
       ]
     }
   },
-  "resetOdom": false,
+  "resetOdom": true,
   "folder": "Amarillo",
   "choreoAuto": false
 }

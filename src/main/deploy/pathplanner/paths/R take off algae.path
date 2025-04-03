@@ -4,24 +4,24 @@
     {
       "anchor": {
         "x": 3.687,
-        "y": 3.004
+        "y": 2.6763831967213116
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.35655737704918,
-        "y": 2.1609118852459015
+        "x": 3.8434669382837923,
+        "y": 2.931082149690412
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 0.8031762295081966,
-        "y": 1.022079918032788
+        "x": 3.8600409836065577,
+        "y": 2.8921618852459017
       },
       "prevControl": {
-        "x": 1.3665983606557373,
-        "y": 1.5974897540983615
+        "x": 3.6619739951373327,
+        "y": 2.6726965707151114
       },
       "nextControl": null,
       "isLocked": false,
@@ -33,16 +33,16 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 3.75,
-    "maxAcceleration": 3.75,
+    "maxVelocity": 2.0,
+    "maxAcceleration": 2.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
-    "nominalVoltage": 12.2,
+    "nominalVoltage": 12.0,
     "unlimited": false
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 144.46232220802563
+    "rotation": 151.63508071259884
   },
   "reversed": false,
   "folder": "Amarillo Right",
@@ -50,5 +50,5 @@
     "velocity": 0,
     "rotation": 148.9400860884938
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }
