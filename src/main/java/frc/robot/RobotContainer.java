@@ -114,13 +114,13 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-        drivetrain.setDefaultCommand(
-        drivetrain.applyRequest(() ->
-        drive.withVelocityX(applyJoystickCurve(-joystick.getLeftY()) * (MaxSpeed/1.875))
-             .withVelocityY(applyJoystickCurve(-joystick.getLeftX()) * (MaxSpeed/1.875))
-             .withRotationalRate(applyJoystickCurve(-joystick.getRightX()) * MaxAngularRate)
-    )
-);
+//         drivetrain.setDefaultCommand(
+//         drivetrain.applyRequest(() ->
+//         drive.withVelocityX(applyJoystickCurve(-joystick.getLeftY()) * (MaxSpeed/1.875))
+//              .withVelocityY(applyJoystickCurve(-joystick.getLeftX()) * (MaxSpeed/1.875))
+//              .withRotationalRate(applyJoystickCurve(-joystick.getRightX()) * MaxAngularRate)
+//     )
+// );
      
         m_algaeIntake.setDefaultCommand(
             new RunCommand(
