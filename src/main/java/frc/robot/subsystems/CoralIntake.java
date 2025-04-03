@@ -21,7 +21,7 @@ public class CoralIntake extends SubsystemBase {
     private static final double INTAKE_SPEED = 1; //.75
     private static final double HOLD_SPEED = 0.06;
     private static final double HOLD_BACK_SPEED = 0;  // Speed for holding coral at the back
-    private static final double REVERSE_SPEED = -1;
+    private static final double REVERSE_SPEED = -.8;
 
     // Sensor thresholds
     private static final double CORAL_DETECTION_THRESHOLD = .075;
