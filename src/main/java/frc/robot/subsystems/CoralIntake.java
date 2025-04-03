@@ -168,7 +168,7 @@ public class CoralIntake extends SubsystemBase {
         }
     }
     
-    private void setIntakeSpeed(double speed) {
+    public void setIntakeSpeed(double speed) {
         try {
             intakeMotor.setControl(dutyCycleControl.withOutput(speed));
         } catch (Exception e) {

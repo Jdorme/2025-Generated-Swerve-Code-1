@@ -9,8 +9,7 @@ import frc.robot.subsystems.ArmSubsystem;
 public class AutoElevatorArmL4Command extends Command {
     private enum SetupState {
         WAITING_FOR_DELAY,     // Initial delay before starting
-        ELEVATOR_UP,           // Moving elevator to scoring height
-        ARM_TO_SCORE,          // Moving arm to scoring angle
+        ELEVATOR_UP_ARM_TO_SCORE,        
         READY_TO_SCORE,        // Everything in position, ready for coral ejection
     }
     
@@ -34,7 +33,7 @@ public class AutoElevatorArmL4Command extends Command {
 
     @Override
     public void initialize() {
-        System.out.println("ElevatorArmL4: Starting command with delay");
+        //System.out.println("ElevatorArmL4: Starting command with delay");
         currentState = SetupState.WAITING_FOR_DELAY;
         startTime = System.currentTimeMillis() / 1000.0; // Current time in seconds
         
@@ -78,26 +77,20 @@ public class AutoElevatorArmL4Command extends Command {
                 SmartDashboard.putNumber("ElevatorArmL4/DelayTimeElapsed", elapsedTime);
                 
                 if (elapsedTime >= DELAY_SECONDS) {
-                    System.out.println("ElevatorArmL4: Delay complete, now setting elevator height");
+                   // System.out.println("ElevatorArmL4: Delay complete, now setting elevator height");
                     m_elevator.setHeight(SafetyConstants.L4[0]);
                     m_arm.setAngle(SafetyConstants.L4[1]);
-                    currentState = SetupState.READY_TO_SCORE;
+                    currentState = SetupState.ELEVATOR_UP_ARM_TO_SCORE;
                 }
                 break;
                 
-            case ELEVATOR_UP:
+            case ELEVATOR_UP_ARM_TO_SCORE:
                 // Wait for elevator to reach L4 height
-                if (isElevatorAtTarget()) {
-                    System.out.println("ElevatorArmL4: Elevator at height, moving arm");
-                    currentState = SetupState.ARM_TO_SCORE;
+                if (isElevatorAtTarget()&&isArmAtTarget(SafetyConstants.L4[1])) {
+                    //System.out.println("ElevatorArmL4: Elevator at height, moving arm");
+                    currentState = SetupState.READY_TO_SCORE;
                     m_arm.setAngle(SafetyConstants.L4[1]);
-                }
-                break;
-                
-            case ARM_TO_SCORE:
-                // Wait for arm to reach scoring angle
-                if (isArmAtTarget(SafetyConstants.L4[1])) {
-                    System.out.println("ElevatorArmL4: Arm at scoring angle, ready for coral ejection");
+                    m_elevator.setHeight(SafetyConstants.L4[0]);
                     currentState = SetupState.READY_TO_SCORE;
                 }
                 break;
