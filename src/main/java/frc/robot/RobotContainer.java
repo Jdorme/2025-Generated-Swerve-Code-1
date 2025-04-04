@@ -139,7 +139,7 @@ public class RobotContainer {
 
         joystick.rightTrigger().whileTrue(new CoralIntakeL2AlgaeCommand(m_coralIntake, m_safetySystem));
         //joystick.rightTrigger().whileTrue(Commands.run(() -> m_algaeIntake.intake()));
-        joystick.leftTrigger().whileTrue(Commands.run(() -> m_algaeIntake.reverse()));
+        //joystick.leftTrigger().whileTrue(Commands.run(() -> m_algaeIntake.reverse()));
 
 //        joystick.x().whileTrue(new L2AlgaeCommand(m_algaeIntake, m_elevatorSubsystem,m_ArmSubsystem));
 
@@ -153,7 +153,7 @@ public class RobotContainer {
         joystick.povDown().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 4.0, 0));
         
-        joystick.a().onTrue(new ArmClimbPositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
+        joystick.back().onTrue(new ArmClimbPositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
 
 
         // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));

@@ -17,7 +17,8 @@ public class ArmClimbPositionCommand extends Command {
         DONE               // Command complete
     }
 
-    private final SafetySubsystem m_safetySystem;
+  //  private final SafetySubsystem m_safetySystem;
+    private final SafetySubsystem m_safetySubsystem;
     private final ArmSubsystem m_arm;
     private final ElevatorSubsystem m_elevator;
     private final AlgaeIntake m_algaeIntake;
@@ -29,11 +30,11 @@ public class ArmClimbPositionCommand extends Command {
     
     public ArmClimbPositionCommand(SafetySubsystem safetySystem, ArmSubsystem arm, 
                                    ElevatorSubsystem elevator, AlgaeIntake algaeIntake) {
-        m_safetySystem = safetySystem;
         m_arm = arm;
         m_elevator = elevator;
         m_algaeIntake = algaeIntake;
-        addRequirements(safetySystem, algaeIntake);
+        m_safetySubsystem = safetySystem;
+        addRequirements(safetySystem, arm, elevator, algaeIntake);
     }
 
     @Override
@@ -44,10 +45,9 @@ public class ArmClimbPositionCommand extends Command {
         
         // First step: Move to stowed position using the safety subsystem
         // This ensures proper sequencing when coming from a low position
-        m_safetySystem.setTargetPosition(
-            SafetyConstants.STOWED[0], 
-            SafetyConstants.STOWED[1]
-        );
+        m_elevator.setHeight(SafetyConstants.STOWED[0]);
+        m_arm.setAngle(SafetyConstants.STOWED[1]);
+
     }
 
     private boolean isElevatorAtTarget(double targetHeight) {
@@ -89,7 +89,7 @@ public class ArmClimbPositionCommand extends Command {
         switch (currentState) {
             case MOVE_TO_STOW:
                 // First ensure we're at a safe height using the safety subsystem
-                if (m_safetySystem.isAtTarget()) {
+                if (areBothAtTarget(SafetyConstants.STOWED[0], SafetyConstants.STOWED[1])) {
                     System.out.println("ClimbPosition: Safety system has reached stowed position");
                     currentState = IntakeState.WAIT_FOR_STOW;
                 }
@@ -147,9 +147,7 @@ public class ArmClimbPositionCommand extends Command {
         }
         
         // Return to stowed position using safety system
-        m_safetySystem.setTargetPosition(
-            SafetyConstants.STOWED[0], 
-            SafetyConstants.STOWED[1]
-        );
+        m_elevator.setHeight(SafetyConstants.STOWED[0]);
+        m_arm.setAngle(SafetyConstants.STOWED[1]);
     }
 }

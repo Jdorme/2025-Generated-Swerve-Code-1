@@ -204,7 +204,7 @@ public class AlgaeIntake extends SubsystemBase {
         if (currentState != IntakeState.ERROR) {
             setIntakeSpeed(0);
             currentState = IntakeState.IDLE;
-            System.out.println("Stopping intake");
+          //  System.out.println("Stopping intake");
         }
     }
     
