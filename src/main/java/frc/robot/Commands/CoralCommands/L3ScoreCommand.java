@@ -27,7 +27,7 @@ public class L3ScoreCommand extends Command {
     
     private static final double ELEVATOR_TOLERANCE = 0.5;
     private static final double ARM_TOLERANCE = 2.0;
-    private static final double SCORING_TIME = 0;
+    private static final double SCORING_TIME = .125;
     
     public L3ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
                          ElevatorSubsystem elevator, ArmSubsystem arm) {

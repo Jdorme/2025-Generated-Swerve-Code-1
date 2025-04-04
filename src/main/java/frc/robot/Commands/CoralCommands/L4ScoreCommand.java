@@ -122,7 +122,7 @@ public class L4ScoreCommand extends Command {
 
             case ARM_BACK:
                 // Wait for arm to return to zero
-                if (isArmAtTarget(0)) {
+                if (isArmAtTarget(34)) {
                     System.out.println("L4Score: Arm at zero, lowering elevator");
                     // Intake already stopped in SCORING state
                     currentState = ScoreState.ELEVATOR_STOW;
