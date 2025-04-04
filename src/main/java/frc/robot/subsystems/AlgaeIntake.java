@@ -82,16 +82,17 @@ public class AlgaeIntake extends SubsystemBase {
     
     @Override
     public void periodic() {
-        if (currentState != IntakeState.ERROR) {
-            try {
-                updateBallDetectionState();
-                updateMotorState();
-                updateDiagnostics();
-                updateDashboard();
-            } catch (Exception e) {
-                handleError("Periodic update failed: " + e.getMessage());
-                e.printStackTrace();
-            }
+        try {
+            // Comment out or modify functions that use the CANrange
+            // updateBallDetectionState(); 
+            updateMotorState();
+            // updateDiagnostics();
+            
+            // Update dashboard with minimal info that doesn't use CANrange
+            SmartDashboard.putString("Algae/State", currentState.toString());
+        } catch (Exception e) {
+            // Just print the error but don't change state
+            System.out.println("Ignored error: " + e.getMessage());
         }
     }
     
@@ -218,14 +219,14 @@ public class AlgaeIntake extends SubsystemBase {
     }
     
     private void handleError(String message) {
-        currentState = IntakeState.ERROR;
-        errorMessage = message;
-        try {
-            intakeMotor.stopMotor();
-        } catch (Exception e) {
-            System.err.println("Failed to stop motor in error handler: " + e.getMessage());
-            e.printStackTrace();
-        }
+        // currentState = IntakeState.ERROR;
+        // errorMessage = message;
+        // try {
+        //     intakeMotor.stopMotor();
+        // } catch (Exception e) {
+        //     System.err.println("Failed to stop motor in error handler: " + e.getMessage());
+        //     e.printStackTrace();
+        // }
     }
     
     public boolean hasBall() {

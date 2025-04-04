@@ -18,7 +18,7 @@ public class AutoL4ScoreCommand extends Command {
         DONE                   // Complete
     }
 
-    private final SafetySubsystem m_safetySystem;
+  //  private final SafetySubsystem m_safetySystem;
     private final CoralIntake m_coralIntake;
     private final ElevatorSubsystem m_elevator;
     private final ArmSubsystem m_arm;
@@ -32,11 +32,12 @@ public class AutoL4ScoreCommand extends Command {
     
     public AutoL4ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
                          ElevatorSubsystem elevator, ArmSubsystem arm) {
-        m_safetySystem = safetySystem;
+     //   m_safetySystem = safetySystem;
         m_coralIntake = coralIntake;
         m_elevator = elevator;
         m_arm = arm;
-        addRequirements(safetySystem, coralIntake);
+        addRequirements(coralIntake, elevator, arm);
+
     }
 
     @Override
