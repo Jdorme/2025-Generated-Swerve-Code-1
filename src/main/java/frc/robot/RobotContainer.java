@@ -26,6 +26,7 @@ import frc.robot.Commands.AlgaeCommands.FloorIntakePositionCommand;
 import frc.robot.Commands.AlgaeCommands.L2AlgaeCommand;
 import frc.robot.Commands.AlgaeCommands.L3AlgaeCommand;
 import frc.robot.Commands.AlgaeCommands.ProcessorCommand;
+import frc.robot.Commands.AutoAlign.ReefAlignmentCommand;
 import frc.robot.Commands.CoralCommands.CoralIntakeL2AlgaeCommand;
 import frc.robot.Commands.CoralCommands.L2ScoreCommand;
 import frc.robot.Commands.CoralCommands.L3ScoreCommand;
@@ -43,11 +44,10 @@ import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.Commands.ArmClimbPositionCommand;
 import frc.robot.Commands.ArmCommand;
 import frc.robot.Commands.SafeInitializationCommand;
-import frc.robot.Commands.AutoAlign.AlignToReefCommand;
-import frc.robot.Commands.AutoAlign.ReefCommandFactory;
-import frc.robot.subsystems.ReefAlignmentSubsystem;
-import frc.robot.subsystems.ReefAlignmentSubsystem.ReefSide;
 import frc.robot.subsystems.PhotonVisionSubsystem;
+
+
+
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
@@ -73,10 +73,10 @@ public class RobotContainer {
     private final SafeInitializationCommand m_safetyInitCommand = new SafeInitializationCommand(
     m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem);
     private final PhotonVisionSubsystem m_photonVision = new PhotonVisionSubsystem();
-    private final ReefAlignmentSubsystem m_reefAlignmentSubsystem = new ReefAlignmentSubsystem(m_photonVision);
-    private final ReefCommandFactory m_reefCommandFactory = new ReefCommandFactory(m_reefAlignmentSubsystem, drivetrain);
+    private final ReefAlignmentCommand m_ReefAlignmentCommand = new ReefAlignmentCommand(drivetrain, m_photonVision, null, drive);
+    
     private final SendableChooser<Command> autoChooser;
-
+    
     public RobotContainer() {
         
         // Register named commands for PathPlanner BEFORE building the auto chooser
@@ -174,9 +174,17 @@ public class RobotContainer {
 
         joystick.x().onTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
         joystick.y().onTrue(new L3AlgaeCommand(m_safetySystem, m_algaeIntake));
-        joystick.a().onTrue(
-        m_reefCommandFactory.alignToLeftPoleThen(
-        new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem)));
+        // Add Reef Alignment Bindings
+        // Align to the left side of the Reef AprilTag
+        joystick.a().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.LEFT,drive));
+
+        // Align to the right side of the Reef AprilTag
+        joystick.b().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.RIGHT,drive));
+
+        // Add Reef Alignment Bindings
+        // Align to the left side of the Reef AprilTag
+        
+        // Basic auto-align to nearest AprilTag
         
         // Button to move to processor position
         //joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
