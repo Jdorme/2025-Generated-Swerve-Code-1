@@ -43,6 +43,11 @@ import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.Commands.ArmClimbPositionCommand;
 import frc.robot.Commands.ArmCommand;
 import frc.robot.Commands.SafeInitializationCommand;
+import frc.robot.Commands.AutoAlign.AlignToReefCommand;
+import frc.robot.Commands.AutoAlign.ReefCommandFactory;
+import frc.robot.subsystems.ReefAlignmentSubsystem;
+import frc.robot.subsystems.ReefAlignmentSubsystem.ReefSide;
+import frc.robot.subsystems.PhotonVisionSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
@@ -67,7 +72,9 @@ public class RobotContainer {
     private final EndgameLiftSubsystem m_endgameLift = new EndgameLiftSubsystem();
     private final SafeInitializationCommand m_safetyInitCommand = new SafeInitializationCommand(
     m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem);
-
+    private final PhotonVisionSubsystem m_photonVision = new PhotonVisionSubsystem();
+    private final ReefAlignmentSubsystem m_reefAlignmentSubsystem = new ReefAlignmentSubsystem(m_photonVision);
+    private final ReefCommandFactory m_reefCommandFactory = new ReefCommandFactory(m_reefAlignmentSubsystem, drivetrain);
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
@@ -167,6 +174,9 @@ public class RobotContainer {
 
         joystick.x().onTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
         joystick.y().onTrue(new L3AlgaeCommand(m_safetySystem, m_algaeIntake));
+        joystick.a().onTrue(
+        m_reefCommandFactory.alignToLeftPoleThen(
+        new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem)));
         
         // Button to move to processor position
         //joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
