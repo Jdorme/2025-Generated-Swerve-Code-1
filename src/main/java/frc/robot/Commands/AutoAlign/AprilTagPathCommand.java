@@ -16,6 +16,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 
@@ -131,11 +132,29 @@ public class AprilTagPathCommand extends Command {
      */
     private void generatePathWithValidPose(EstimatedRobotPose pose) {
         try {
+            // Get the current alliance
+            Optional<Alliance> alliance = DriverStation.getAlliance();
+            Alliance currentAlliance = alliance.isPresent() ? alliance.get() : Alliance.Red; // Default to Red if not available
+            
             // Get the nearest visible tag ID using the provided pose
             int nearestTagId = m_photonVision.getNearestVisibleTagId(pose);
             
-            // Check if the nearest tag is in our allowed list
-            if (nearestTagId != -1 && m_allowedTagIds.contains(nearestTagId)) {
+            // Check if the tag is valid for our alliance
+            boolean isValidTag = false;
+            if (nearestTagId != -1) {
+                // Check if the tag is in our allowed list
+                if (m_allowedTagIds.contains(nearestTagId)) {
+                    // Check if the tag is on our alliance's side
+                    boolean isRedTag = isRedAllianceTag(nearestTagId);
+                    boolean isBlueTag = isBlueAllianceTag(nearestTagId);
+                    
+                    // Tag is valid if it's on our alliance's side
+                    isValidTag = (currentAlliance == Alliance.Red && isRedTag) || 
+                                (currentAlliance == Alliance.Blue && isBlueTag);
+                }
+            }
+            
+            if (isValidTag) {
                 SmartDashboard.putBoolean("TagPath/ValidTagFound", true);
                 SmartDashboard.putNumber("TagPath/TargetTagId", nearestTagId);
                 
@@ -154,22 +173,46 @@ public class AprilTagPathCommand extends Command {
                     m_pathCommand = generatePathCommand(currentPose, goalPose);
                     m_isPathGenerated = true;
                     SmartDashboard.putBoolean("TagPath/PathGenerated", true);
-                    DriverStation.reportWarning("Path generated to nearest allowed tag ID: " + nearestTagId, false);
+                    DriverStation.reportWarning("Path generated to nearest allowed tag ID: " + nearestTagId + 
+                                               " for " + currentAlliance + " alliance", false);
                 } else {
                     DriverStation.reportWarning("Could not determine tag position for tag ID: " + nearestTagId, false);
                 }
             } else {
-                // Either no tag was found or nearest tag isn't in the allowed list
+                // Either no tag was found or nearest tag isn't valid for our alliance
                 if (nearestTagId == -1) {
                     DriverStation.reportWarning("No visible tags found", false);
-                } else {
+                } else if (!m_allowedTagIds.contains(nearestTagId)) {
                     DriverStation.reportWarning("Nearest tag ID " + nearestTagId + " is not in allowed list", false);
+                } else {
+                    DriverStation.reportWarning("Nearest tag ID " + nearestTagId + 
+                                               " is not valid for " + currentAlliance + " alliance", false);
                 }
                 SmartDashboard.putBoolean("TagPath/ValidTagFound", false);
             }
         } catch (Exception e) {
             DriverStation.reportError("Error generating path: " + e.getMessage(), e.getStackTrace());
         }
+    }
+    
+    /**
+     * Check if a tag ID belongs to the Red alliance side
+     * @param tagId The AprilTag ID to check
+     * @return true if the tag is on the Red alliance side
+     */
+    private boolean isRedAllianceTag(int tagId) {
+        // Red alliance tags: 6-11
+        return tagId >= 6 && tagId <= 11;
+    }
+    
+    /**
+     * Check if a tag ID belongs to the Blue alliance side
+     * @param tagId The AprilTag ID to check
+     * @return true if the tag is on the Blue alliance side
+     */
+    private boolean isBlueAllianceTag(int tagId) {
+        // Blue alliance tags: 17-22
+        return tagId >= 17 && tagId <= 22;
     }
     
     /**
@@ -195,7 +238,7 @@ public class AprilTagPathCommand extends Command {
             .plus(tagYAxis.times(yOffset));
         
         // Calculate the goal rotation (180 degrees from tag heading)
-        Rotation2d goalRotation = tagRotation.plus(Rotation2d.fromDegrees(180));
+        Rotation2d goalRotation = tagRotation.plus(Rotation2d.fromDegrees(90));
         //This assumes you want what is considered the front of your robot to face tag. If your arm mechanism is not at the front of the robot change this angle
         // Return the goal pose
         return new Pose2d(offsetPosition, goalRotation);

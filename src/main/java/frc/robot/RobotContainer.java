@@ -180,15 +180,15 @@ public class RobotContainer {
         //joystick.a().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.LEFT,drive));
         joystick.a().onTrue(new AprilTagPathCommand( m_photonVision, 
         drivetrain, 
-        1.0, // Y-offset: 1 meter to the left of the tag 
-        3.0, // Max velocity: 3 m/s 
-        2.0, // Max acceleration: 2 m/s² 
+        .22, // Y-offset: 1 meter to the left of the tag 
+        1.0, // Max velocity: 3 m/s 
+        .5, // Max acceleration: 2 m/s² 
         6,7,8,9,10,11 ));// List of all allowed tag IDs ));
         joystick.b().onTrue(new AprilTagPathCommand( m_photonVision, 
         drivetrain, 
-        -1.0, // Y-offset: 1 meter to the left of the tag 
-        3.0, // Max velocity: 3 m/s 
-        2.0, // Max acceleration: 2 m/s² 
+        -.22, // Y-offset: 1 meter to the left of the tag 
+        1.0, // Max velocity: 3 m/s 
+        .5, // Max acceleration: 2 m/s² 
         6,7,8,9,10,11));
         // Align to the right side of the Reef AprilTag
         //joystick.b().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.RIGHT,drive));
