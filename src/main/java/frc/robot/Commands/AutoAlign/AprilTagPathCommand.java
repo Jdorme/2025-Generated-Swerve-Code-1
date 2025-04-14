@@ -251,26 +251,35 @@ public class AprilTagPathCommand extends Command {
      * @return A command that follows the generated path
      */
     private Command generatePathCommand(Pose2d startPose, Pose2d endPose) {
-        // Create path constraints
-        PathConstraints constraints = new PathConstraints(
-            MAX_VELOCITY, MAX_ACCELERATION,
-            Math.toRadians(540), Math.toRadians(720) // Default rotation constraints
-        );
-        
-        // Build a simple path
-        PathPlannerPath path = new PathPlannerPath(
+      // Create path constraints
+      PathConstraints constraints = new PathConstraints(
+          MAX_VELOCITY, MAX_ACCELERATION,
+          Math.toRadians(540), Math.toRadians(720)
+      );
+      
+      // Get current alliance
+      Alliance currentAlliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+      boolean shouldFlip = currentAlliance == Alliance.Red;
+      
+      // Build a simple path
+      PathPlannerPath path = new PathPlannerPath(
           PathPlannerPath.waypointsFromPoses(
               startPose,
               endPose
           ),
           constraints,
-          null, // IdealStartingState parameter (can be null for on-the-fly paths)
-          new GoalEndState(0, endPose.getRotation())
+          null,
+          new GoalEndState(0, endPose.getRotation()),
+          shouldFlip  // Add this parameter to tell PathPlanner to flip if needed
       );
-        
-        // Return the command to follow the path
-        return AutoBuilder.followPath(path);
-    }
+      
+      // Log path information
+      DriverStation.reportWarning("Path generated for " + currentAlliance + 
+                                 " alliance. shouldFlip=" + shouldFlip, false);
+      
+      // Return the command to follow the path
+      return AutoBuilder.followPath(path);
+  }
     
     @Override
     public boolean isFinished() {
