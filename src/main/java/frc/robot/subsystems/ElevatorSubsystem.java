@@ -67,7 +67,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         
         // Current limits for safety
-        motorConfig.CurrentLimits.SupplyCurrentLimit = 60;
+        motorConfig.CurrentLimits.SupplyCurrentLimit = 40;
         motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         
         // Configure the PID gains

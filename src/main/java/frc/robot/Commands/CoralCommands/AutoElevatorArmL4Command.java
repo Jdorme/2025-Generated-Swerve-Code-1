@@ -42,6 +42,7 @@ public class AutoElevatorArmL4Command extends Command {
         
         // Ensure arm is at zero initially while we wait
         m_arm.setAngle(0);
+        m_elevator.setHeight(SafetyConstants.STOWED[0]);
         m_coralIntake.setIntakeSpeed(.06);
         
     }
