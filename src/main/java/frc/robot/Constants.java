@@ -90,9 +90,16 @@ public static final class EndgameLiftConstants {
     public static final double POSITION_EXTENDED = 80; // Inward position (near forward soft limit 85)
 }
 
+// Add this to your existing Constants.java file
+
 public static final class ReefAlignmentConstants {
+    // Camera Selection - update these with your actual camera IDs
+    public static final String LEFT_POLE_CAMERA = "ElevatorCam";  // Camera for left pole alignment
+    public static final String RIGHT_POLE_CAMERA = "EndGameCam";  // Camera for right pole alignment
+    
     // Tag Alignment Configuration
-    public static final int[] VALID_REEF_TAG_IDS = {6, 7, 8, 9, 10, 11};
+    public static final int[] VALID_REEF_TAG_IDS_BLUE = {17, 18, 19, 20, 21, 22};
+    public static final int[] VALID_REEF_TAG_IDS_RED = {6, 7, 8, 9, 10, 11};
     
     // Alignment Distance Parameters
     public static final double TARGET_DISTANCE = 0.6; // meters from tag
@@ -184,6 +191,7 @@ public static final class MotionMagicConstants {
         }
     }
 }
+
 
 //Drivetrain IDs--------------------------------------------------
 
