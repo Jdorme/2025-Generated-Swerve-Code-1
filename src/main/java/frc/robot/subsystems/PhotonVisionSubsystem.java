@@ -351,69 +351,68 @@ public class PhotonVisionSubsystem extends SubsystemBase {
     }
 
     /**
- * Get the nearest visible AprilTag ID from a specific vision result
- * @param pose The EstimatedRobotPose to use for finding the nearest tag
- * @return The ID of the nearest visible tag, or -1 if none visible
- */
-public int getNearestVisibleTagId(EstimatedRobotPose pose) {
-    double closestDistance = Double.MAX_VALUE;
-    int closestTagId = -1;
-    
-    // Check all targets in the provided pose estimation
-    for (PhotonTrackedTarget target : pose.targetsUsed) {
-        double distance = target.getBestCameraToTarget().getTranslation().getNorm();
+     * Get the nearest visible AprilTag ID from a specific vision result
+     * @param pose The EstimatedRobotPose to use for finding the nearest tag
+     * @return The ID of the nearest visible tag, or -1 if none visible
+     */
+    public int getNearestVisibleTagId(EstimatedRobotPose pose) {
+        double closestDistance = Double.MAX_VALUE;
+        int closestTagId = -1;
         
-        if (distance < closestDistance) {
-            closestDistance = distance;
-            closestTagId = target.getFiducialId();
-        }
-    }
-        
-    return closestTagId;
-}
-
-/**
- * Get the field-relative pose of an AprilTag using camera measurements
- * rather than the field layout
- * 
- * @param tagId The ID of the AprilTag to find
- * @param pose The EstimatedRobotPose to use for calculating tag positions
- * @return An Optional containing the tag's pose, or empty if not found
- */
-public Optional<Pose2d> getMeasuredTagPose(int tagId, EstimatedRobotPose pose) {
-    try {
-        // Look through all targets used in the provided pose estimation
+        // Check all targets in the provided pose estimation
         for (PhotonTrackedTarget target : pose.targetsUsed) {
-            if (target.getFiducialId() == tagId) {
-                // Find which camera detected this tag
-                int cameraIndex = recentPoseCameraIndex;
-                if (cameraIndex < 0) {
-                    return Optional.empty(); // dont run if cameraIndex not found
-                }
-                
-                // Get the transform from camera to tag
-                Transform3d cameraToTarget = target.getBestCameraToTarget();
-                
-                // Get the transform from robot to camera
-                Transform3d robotToCamera = cameraTransforms.get(cameraIndex);
-                
-                // Get the camera's pose in field coordinates
-                Pose3d cameraPose = pose.estimatedPose.transformBy(robotToCamera);
-                
-                // Calculate the tag's pose in field coordinates
-                Pose3d tagPose = cameraPose.transformBy(cameraToTarget);
-                
-                // Return the 2D pose for path planning
-                return Optional.of(tagPose.toPose2d());
+            double distance = target.getBestCameraToTarget().getTranslation().getNorm();
+            
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestTagId = target.getFiducialId();
             }
         }
-        
-        // Tag not found in any camera
-        return Optional.empty();
-    } catch (Exception e) {
-        DriverStation.reportError("Error getting measured tag pose: " + e.getMessage(), e.getStackTrace());
-        return Optional.empty();
+            
+        return closestTagId;
     }
-}
 
+    /**
+     * Get the field-relative pose of an AprilTag using camera measurements
+     * rather than the field layout
+     * 
+     * @param tagId The ID of the AprilTag to find
+     * @param pose The EstimatedRobotPose to use for calculating tag positions
+     * @return An Optional containing the tag's pose, or empty if not found
+     */
+    public Optional<Pose2d> getMeasuredTagPose(int tagId, EstimatedRobotPose pose) {
+        try {
+            // Look through all targets used in the provided pose estimation
+            for (PhotonTrackedTarget target : pose.targetsUsed) {
+                if (target.getFiducialId() == tagId) {
+                    // Find which camera detected this tag
+                    int cameraIndex = recentPoseCameraIndex;
+                    if (cameraIndex < 0) {
+                        return Optional.empty(); // dont run if cameraIndex not found
+                    }
+                    
+                    // Get the transform from camera to tag
+                    Transform3d cameraToTarget = target.getBestCameraToTarget();
+                    
+                    // Get the transform from robot to camera
+                    Transform3d robotToCamera = cameraTransforms.get(cameraIndex);
+                    
+                    // Get the camera's pose in field coordinates
+                    Pose3d cameraPose = pose.estimatedPose.transformBy(robotToCamera);
+                    
+                    // Calculate the tag's pose in field coordinates
+                    Pose3d tagPose = cameraPose.transformBy(cameraToTarget);
+                    
+                    // Return the 2D pose for path planning
+                    return Optional.of(tagPose.toPose2d());
+                }
+            }
+            
+            // Tag not found in any camera
+            return Optional.empty();
+        } catch (Exception e) {
+            DriverStation.reportError("Error getting measured tag pose: " + e.getMessage(), e.getStackTrace());
+            return Optional.empty();
+        }
+    }
 }
