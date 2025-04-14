@@ -7,7 +7,11 @@ import java.util.Set;
 
 import org.photonvision.EstimatedRobotPose;
 
+import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -43,6 +47,9 @@ public class AprilTagPathCommand extends Command {
     private final double MAX_VELOCITY; // m/s
     private final double MAX_ACCELERATION; // m/s²
     private final double Y_OFFSET; // meters (offset along tag's Y-axis)
+    
+    // Alliance tracking
+    private Alliance m_currentAlliance;
     
     /**
      * Create a command to generate and follow a path to the nearest allowed AprilTag
@@ -92,7 +99,43 @@ public class AprilTagPathCommand extends Command {
         SmartDashboard.putNumber("TagPath/TargetTagId", -1);
         SmartDashboard.putBoolean("TagPath/ValidTagFound", false);
         
-        DriverStation.reportWarning("AprilTagPath initialized. Looking for nearest allowed tag.", false);
+        // Get the current alliance
+        Optional<Alliance> alliance = DriverStation.getAlliance();
+        m_currentAlliance = alliance.isPresent() ? alliance.get() : Alliance.Red;
+        
+        // Configure AutoBuilder with the correct alliance information
+        try {
+            var config = RobotConfig.fromGUISettings();
+            AutoBuilder.configure(
+                // Supplier of current robot pose
+                () -> m_drivetrain.getState().Pose,
+                // Consumer for seeding pose against auto
+                m_drivetrain::resetPose,
+                // Supplier of current robot speeds
+                () -> m_drivetrain.getState().Speeds,
+                // Consumer of ChassisSpeeds to drive the robot
+                (speeds, feedforwards) -> m_drivetrain.setControl(
+                    new SwerveRequest.ApplyRobotSpeeds().withSpeeds(speeds)
+                        .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+                        .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
+                ),
+                // Path following controller
+                new PPHolonomicDriveController(
+                    // PID constants for translation
+                    new PIDConstants(10, 0, 0),
+                    // PID constants for rotation
+                    new PIDConstants(7, 0, 0)
+                ),
+                config,
+                // Assume the path needs to be flipped for Red vs Blue, this is normally the case
+                () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
+                m_drivetrain // Subsystem for requirements
+            );
+            
+            DriverStation.reportWarning("AprilTagPath initialized for " + m_currentAlliance + " alliance.", false);
+        } catch (Exception ex) {
+            DriverStation.reportError("Failed to configure AutoBuilder in AprilTagPathCommand", ex.getStackTrace());
+        }
     }
     
     @Override
@@ -132,9 +175,8 @@ public class AprilTagPathCommand extends Command {
      */
     private void generatePathWithValidPose(EstimatedRobotPose pose) {
         try {
-            // Get the current alliance
-            Optional<Alliance> alliance = DriverStation.getAlliance();
-            Alliance currentAlliance = alliance.isPresent() ? alliance.get() : Alliance.Red; // Default to Red if not available
+            // Get the current alliance - use the value we stored in initialize()
+            Alliance currentAlliance = m_currentAlliance;
             
             // Get the nearest visible tag ID using the provided pose
             int nearestTagId = m_photonVision.getNearestVisibleTagId(pose);
@@ -168,6 +210,11 @@ public class AprilTagPathCommand extends Command {
                     // Calculate approach position with Y offset
                     Pose2d currentPose = m_drivetrain.getState().Pose;
                     Pose2d goalPose = calculateApproachPose(tagPose, currentPose, Y_OFFSET);
+                    
+                    // Log path information
+                    DriverStation.reportWarning("Alliance: " + currentAlliance + 
+                                              ", Path from (" + currentPose.getX() + "," + currentPose.getY() + ") to (" + 
+                                              goalPose.getX() + "," + goalPose.getY() + ")", false);
                     
                     // Generate the path
                     m_pathCommand = generatePathCommand(currentPose, goalPose);
@@ -226,6 +273,12 @@ public class AprilTagPathCommand extends Command {
         // Get the tag's rotation
         Rotation2d tagRotation = tagPose.getRotation();
         
+        // For Red alliance, we need to adjust the Y offset direction
+        if (m_currentAlliance == Alliance.Red) {
+            // Flip the Y offset for Red alliance
+            yOffset = -yOffset;
+        }
+        
         // Calculate the vector that represents the tag's Y-axis in field coordinates
         // This is perpendicular to the tag's heading
         Translation2d tagYAxis = new Translation2d(
@@ -237,9 +290,15 @@ public class AprilTagPathCommand extends Command {
         Translation2d offsetPosition = tagPose.getTranslation()
             .plus(tagYAxis.times(yOffset));
         
-        // Calculate the goal rotation (180 degrees from tag heading)
-        Rotation2d goalRotation = tagRotation.plus(Rotation2d.fromDegrees(90));
-        //This assumes you want what is considered the front of your robot to face tag. If your arm mechanism is not at the front of the robot change this angle
+        // Calculate the goal rotation (90 degrees from tag heading)
+        // Adjust based on alliance
+        Rotation2d goalRotation;
+        if (m_currentAlliance == Alliance.Red) {
+            goalRotation = tagRotation.plus(Rotation2d.fromDegrees(-90));
+        } else {
+            goalRotation = tagRotation.plus(Rotation2d.fromDegrees(90));
+        }
+        
         // Return the goal pose
         return new Pose2d(offsetPosition, goalRotation);
     }
@@ -251,35 +310,32 @@ public class AprilTagPathCommand extends Command {
      * @return A command that follows the generated path
      */
     private Command generatePathCommand(Pose2d startPose, Pose2d endPose) {
-      // Create path constraints
-      PathConstraints constraints = new PathConstraints(
-          MAX_VELOCITY, MAX_ACCELERATION,
-          Math.toRadians(540), Math.toRadians(720)
-      );
-      
-      // Get current alliance
-      Alliance currentAlliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-      boolean shouldFlip = currentAlliance == Alliance.Red;
-      
-      // Build a simple path
-      PathPlannerPath path = new PathPlannerPath(
-          PathPlannerPath.waypointsFromPoses(
-              startPose,
-              endPose
-          ),
-          constraints,
-          null,
-          new GoalEndState(0, endPose.getRotation()),
-          shouldFlip  // Add this parameter to tell PathPlanner to flip if needed
-      );
-      
-      // Log path information
-      DriverStation.reportWarning("Path generated for " + currentAlliance + 
-                                 " alliance. shouldFlip=" + shouldFlip, false);
-      
-      // Return the command to follow the path
-      return AutoBuilder.followPath(path);
-  }
+        // Create path constraints
+        PathConstraints constraints = new PathConstraints(
+            MAX_VELOCITY, MAX_ACCELERATION,
+            Math.toRadians(540), Math.toRadians(720) // Default rotation constraints
+        );
+        
+        // Build a simple path
+        PathPlannerPath path = new PathPlannerPath(
+            PathPlannerPath.waypointsFromPoses(
+                startPose,
+                endPose
+            ),
+            constraints,
+            null, // IdealStartingState parameter (can be null for on-the-fly paths)
+            new GoalEndState(0, endPose.getRotation())
+        );
+        
+        // Log that we're generating a path for the current alliance
+        DriverStation.reportWarning("Generated path for " + m_currentAlliance + 
+                                   " alliance from (" + startPose.getX() + "," + startPose.getY() + ") to (" + 
+                                   endPose.getX() + "," + endPose.getY() + ")", false);
+        
+        // Use AutoBuilder to follow the path - this will use the alliance flipping
+        // configuration we set up in initialize()
+        return AutoBuilder.followPath(path);
+    }
     
     @Override
     public boolean isFinished() {
