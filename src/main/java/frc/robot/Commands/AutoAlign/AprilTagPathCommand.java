@@ -207,7 +207,7 @@ public class AprilTagPathCommand extends Command {
       
       // Calculate the offset position along the tag's Y-axis
       Translation2d offsetPosition = tagPose.getTranslation()
-          .plus(tagYAxis.times(yOffset));
+          .plus(tagYAxis.times(1));
       
       // Calculate the goal rotation (90 degrees from tag heading)
       // Adjust based on alliance
