@@ -122,6 +122,12 @@
           "data": {
             "name": "AutoL4ScoreCommand"
           }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "LEndAtSource"
+          }
         }
       ]
     }

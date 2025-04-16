@@ -42,6 +42,7 @@ import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.EndgameLiftSubsystem;
 import frc.robot.subsystems.SafetySubsystem;
 import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.Commands.AlgaeProcessorScoreCommand;
 import frc.robot.Commands.ArmClimbPositionCommand;
 import frc.robot.Commands.ArmCommand;
 import frc.robot.Commands.SafeInitializationCommand;
@@ -147,7 +148,7 @@ public class RobotContainer {
 
         joystick.rightTrigger().whileTrue(new CoralIntakeL2AlgaeCommand(m_coralIntake, m_safetySystem));
         //joystick.rightTrigger().whileTrue(Commands.run(() -> m_algaeIntake.intake()));
-        //joystick.leftTrigger().whileTrue(Commands.run(() -> m_algaeIntake.reverse()));
+        joystick.leftTrigger().whileTrue(Commands.run(() -> m_algaeIntake.reverse()));
 
 //        joystick.x().whileTrue(new L2AlgaeCommand(m_algaeIntake, m_elevatorSubsystem,m_ArmSubsystem));
 
@@ -178,18 +179,18 @@ public class RobotContainer {
         // Add Reef Alignment Bindings
         // Align to the left side of the Reef AprilTag
         //joystick.a().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.LEFT,drive));
-        joystick.a().onTrue(new AprilTagPathCommand( m_photonVision, 
-        drivetrain, 
-        .22, // Y-offset: 1 meter to the left of the tag 
-        1.0, // Max velocity: 3 m/s 
-        .5, // Max acceleration: 2 m/s² 
-        6,7,8,9,10,11 ));// List of all allowed tag IDs ));
-        joystick.b().onTrue(new AprilTagPathCommand( m_photonVision, 
-        drivetrain, 
-        -.22, // Y-offset: 1 meter to the left of the tag 
-        1.0, // Max velocity: 3 m/s 
-        .5, // Max acceleration: 2 m/s² 
-        6,7,8,9,10,11));
+        // joystick.a().onTrue(new AprilTagPathCommand( m_photonVision, 
+        // drivetrain, 
+        // .22, // Y-offset: 1 meter to the left of the tag 
+        // 2.5, // Max velocity: 3 m/s 
+        // 1.5, // Max acceleration: 2 m/s² 
+        // 6,7,8,9,10,11,17,18,19,20,21,22 ));// List of all allowed tag IDs ));
+        // joystick.b().onTrue(new AprilTagPathCommand( m_photonVision, 
+        // drivetrain, 
+        // -.22, // Y-offset: 1 meter to the left of the tag 
+        // 2.5, // Max velocity: 3 m/s 
+        // 1.5, // Max acceleration: 2 m/s² 
+        // 6,7,8,9,10,11,17,18,19,20,21,22));
         // Align to the right side of the Reef AprilTag
         //joystick.b().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.RIGHT,drive));
 
@@ -199,13 +200,15 @@ public class RobotContainer {
         // Basic auto-align to nearest AprilTag
         
         // Button to move to processor position
-        //joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
+        joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
 
         
         // Button to move to net position
-        // joystick.b().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 
-        //     SafetyConstants.NET_ALGAE[0], 
-        //     SafetyConstants.NET_ALGAE[1]));
+        joystick.b().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.setHeight(SafetyConstants.NET_ALGAE[0]), m_elevatorSubsystem));
+        joystick.b().onTrue(Commands.runOnce(() -> m_ArmSubsystem.setAngle(SafetyConstants.NET_ALGAE[1]), m_ArmSubsystem));
+        
+            
+
 
        // joystick.start().onTrue(new FloorIntakePositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
 

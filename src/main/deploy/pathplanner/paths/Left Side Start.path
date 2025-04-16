@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.264549180327867,
-        "y": 6.6563012295081965
+        "x": 7.084733606557376,
+        "y": 6.7162397540983605
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.482025385286756,
-        "y": 6.081026831539794
+        "x": 5.392645763428194,
+        "y": 5.430707548610361
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 4.953559468598429,
-        "y": 5.121583930617006
+        "x": 5.0017133033878505,
+        "y": 5.204681382924467
       },
       "prevControl": {
-        "x": 5.031559468598429,
-        "y": 5.735833930617006
+        "x": 5.13990836254582,
+        "y": 5.413013151083634
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "CoralTopRightR"
     }
   ],
   "rotationTargets": [],
@@ -69,7 +69,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -27.824096384253245
+    "rotation": -28.460175998771188
   },
   "reversed": false,
   "folder": "Amarillo Left",

@@ -15,7 +15,7 @@ public class ArmSubsystem extends SubsystemBase {
     // Physical constants
     private static final double GEAR_RATIO = 74.5; // 102.5:1 reduction changed to 74.5 16t sprocket to 22t
     private static final double MAX_ANGLE = 180.0; // degrees
-    private static final double MIN_ANGLE = -180; // degrees - new minimum angle
+    private static final double MIN_ANGLE = -210; // degrees - new minimum angle
     
     // Motor
     private final TalonFX motor;

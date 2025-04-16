@@ -47,16 +47,16 @@ public static final class SafetyConstants{
         //------------Setpoints---------------
                 // (elevator height, arm angle)
                 public static final double[] STOWED = {4, 0.0};
-                public static final double[] L4 = {25.25, 62};
+                public static final double[] L4 = {25.5, 67};
                 public static final double[] L3 = {9, 34};
                 public static final double[] L2 = {2.5, 45};
-                public static final double[] PICKUP = {8.75, -115};
+                public static final double[] PICKUP = {8.5, -115};
                 
                 public static final double[] L3_ALGAE = {9, -105};
-                public static final double[] L2_ALGAE = {0, -110};
+                public static final double[] L2_ALGAE = {0, -120};
                 public static final double[] GROUND_ALGAE = {8, -75};
-                public static final double[] PROCESSOR_ALGAE = {0, -80};
-                public static final double[] NET_ALGAE = {0, 0};
+                public static final double[] PROCESSOR_ALGAE = {0, -60};
+                public static final double[] NET_ALGAE = {27.5, -185};
 
                 public static final double[] CLIMB_POSITION = {0, 90};
 

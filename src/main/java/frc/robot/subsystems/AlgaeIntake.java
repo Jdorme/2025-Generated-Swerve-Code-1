@@ -19,6 +19,7 @@ public class AlgaeIntake extends SubsystemBase {
     private static final double INTAKE_SPEED = 1;  // Using new, lower speed
     private static final double REVERSE_SPEED = -1.0;
     private static final double HOLD_SPEED = 0.05;
+    
 
     // Sensor thresholds - ADJUSTABLE for testing
     private static final double BALL_DETECTION_THRESHOLD = 0.0625; // Increased from 0.05 to 0.5
@@ -41,6 +42,7 @@ public class AlgaeIntake extends SubsystemBase {
     // State tracking
     private IntakeState currentState = IntakeState.IDLE;
     private boolean isBallHeld = false;
+    private boolean newHasBall;
     private boolean wasLastStateBallPresent = false;
     private String errorMessage = "";
     
@@ -52,12 +54,15 @@ public class AlgaeIntake extends SubsystemBase {
     private int totalReadings = 0;
     private int positiveReadings = 0;
     private int cycleCounter = 0;
+    
 
     public AlgaeIntake() {
         intakeMotor = new TalonFX(Constants.AlgaeIntakeConstants.algaeIntakeMotorID);
         ballSensor = new CANrange(Constants.AlgaeIntakeConstants.algaeIntakeCANrangeID);
         dutyCycleControl = new DutyCycleOut(0);
-        
+        double Current = intakeMotor.getStatorCurrent().getValueAsDouble();
+        SmartDashboard.putNumber("TCurrent",Current);
+        newHasBall = Current > -25; 
         try {
             configureMotor();
             System.out.println("Started AlgaeIntake diagnostics - CANrange Sensor ID: " + ballSensor.getDeviceID());
@@ -194,8 +199,7 @@ public class AlgaeIntake extends SubsystemBase {
     
     public void reverse() {
         if (currentState != IntakeState.ERROR) {
-            setIntakeSpeed(REVERSE_SPEED);
-            isBallHeld = false;
+            setReverseIntakeSpeed(REVERSE_SPEED);
             currentState = IntakeState.REVERSING;
             System.out.println("Reversing intake at speed: " + REVERSE_SPEED);
         }
@@ -211,13 +215,22 @@ public class AlgaeIntake extends SubsystemBase {
     
     private void setIntakeSpeed(double speed) {
         try {
-            intakeMotor.setControl(dutyCycleControl.withOutput(speed));
+            if (newHasBall){intakeMotor.setControl(dutyCycleControl.withOutput(.15));
+            }else{intakeMotor.setControl(dutyCycleControl.withOutput(.3));}
         } catch (Exception e) {
             handleError("Failed to set motor speed: " + e.getMessage());
             e.printStackTrace();
         }
     }
-    
+    private void setReverseIntakeSpeed(double speed) {
+        try {
+            intakeMotor.setControl(dutyCycleControl.withOutput(REVERSE_SPEED));
+            
+        } catch (Exception e) {
+            handleError("Failed to set motor speed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     private void handleError(String message) {
         // currentState = IntakeState.ERROR;
         // errorMessage = message;

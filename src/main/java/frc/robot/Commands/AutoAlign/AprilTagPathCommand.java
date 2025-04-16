@@ -296,7 +296,7 @@ public class AprilTagPathCommand extends Command {
         if (m_currentAlliance == Alliance.Red) {
             goalRotation = tagRotation.plus(Rotation2d.fromDegrees(-90));
         } else {
-            goalRotation = tagRotation.plus(Rotation2d.fromDegrees(90));
+            goalRotation = tagRotation.plus(Rotation2d.fromDegrees(-90));
         }
         
         // Return the goal pose
