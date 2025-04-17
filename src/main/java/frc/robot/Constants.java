@@ -52,7 +52,7 @@ public static final class SafetyConstants{
                 public static final double[] L2 = {2.5, 45};
                 public static final double[] PICKUP = {8.5, -115};
                 
-                public static final double[] L3_ALGAE = {9, -105};
+                public static final double[] L3_ALGAE = {9, -120};
                 public static final double[] L2_ALGAE = {0, -120};
                 public static final double[] GROUND_ALGAE = {8, -75};
                 public static final double[] PROCESSOR_ALGAE = {0, -60};

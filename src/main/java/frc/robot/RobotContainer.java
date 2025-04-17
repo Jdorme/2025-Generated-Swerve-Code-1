@@ -185,12 +185,12 @@ public class RobotContainer {
         // 2.5, // Max velocity: 3 m/s 
         // 1.5, // Max acceleration: 2 m/s² 
         // 6,7,8,9,10,11,17,18,19,20,21,22 ));// List of all allowed tag IDs ));
-        joystick.b().onTrue(new AprilTagPathCommand( m_photonVision, 
-        drivetrain, 
-        -.22, // Y-offset: 1 meter to the left of the tag 
-        2.5, // Max velocity: 3 m/s 
-        1.5, // Max acceleration: 2 m/s² 
-        6,7,8,9,10,11,17,18,19,20,21,22));
+        // joystick.b().onTrue(new AprilTagPathCommand( m_photonVision, 
+        // drivetrain, 
+        // -.22, // Y-offset: 1 meter to the left of the tag 
+        // 2.5, // Max velocity: 3 m/s 
+        // 1.5, // Max acceleration: 2 m/s² 
+        // 6,7,8,9,10,11,17,18,19,20,21,22));
         //Align to the right side of the Reef AprilTag
         //joystick.b().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.RIGHT,drive));
 
@@ -204,8 +204,8 @@ public class RobotContainer {
 
         
         // Button to move to net position
-        // joystick.b().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.setHeight(SafetyConstants.NET_ALGAE[0]), m_elevatorSubsystem));
-        // joystick.b().onTrue(Commands.runOnce(() -> m_ArmSubsystem.setAngle(SafetyConstants.NET_ALGAE[1]), m_ArmSubsystem));
+         joystick.b().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.setHeight(SafetyConstants.NET_ALGAE[0]), m_elevatorSubsystem));
+         joystick.b().onTrue(Commands.runOnce(() -> m_ArmSubsystem.setAngle(SafetyConstants.NET_ALGAE[1]), m_ArmSubsystem));
         
             
 
