@@ -205,7 +205,7 @@ public class RobotContainer {
 
         
         // Button to move to net position
-       joystick.b().onTrue(new AlgaeNetCommand(m_elevatorSubsystem, m_ArmSubsystem, m_algaeIntake));
+       joystick.b().onTrue(new AlgaeNetCommand(m_safetySystem, m_algaeIntake));
 
         //  joystick.b().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.setHeight(SafetyConstants.NET_ALGAE[0]), m_elevatorSubsystem));
         //  joystick.b().onTrue(Commands.runOnce(() -> m_ArmSubsystem.setAngle(SafetyConstants.NET_ALGAE[1]), m_ArmSubsystem));
