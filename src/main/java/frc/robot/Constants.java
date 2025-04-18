@@ -50,6 +50,7 @@ public static final class SafetyConstants{
                 public static final double[] L4 = {25.5, 67};
                 public static final double[] L3 = {9, 34};
                 public static final double[] L2 = {2.5, 45};
+                public static final double[] L1 = {2.5, -115};
                 public static final double[] PICKUP = {8.5, -115};
                 
                 public static final double[] L3_ALGAE = {9, -120};

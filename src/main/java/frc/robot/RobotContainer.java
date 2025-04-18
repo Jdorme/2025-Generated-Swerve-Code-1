@@ -30,6 +30,7 @@ import frc.robot.Commands.AlgaeCommands.ProcessorCommand;
 import frc.robot.Commands.AutoAlign.AprilTagPathCommand;
 import frc.robot.Commands.AutoAlign.ReefAlignmentCommand;
 import frc.robot.Commands.CoralCommands.CoralIntakeL2AlgaeCommand;
+import frc.robot.Commands.CoralCommands.L1ScoreCommand;
 import frc.robot.Commands.CoralCommands.L2ScoreCommand;
 import frc.robot.Commands.CoralCommands.L3ScoreCommand;
 import frc.robot.Commands.CoralCommands.L4ScoreCommand;
@@ -162,6 +163,7 @@ public class RobotContainer {
         joystick.povLeft().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povDown().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 4.0, 0));
+        //joystick.y().and(joystick.b()).onTrue(new L1ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         
         joystick.back().onTrue(new ArmClimbPositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
 
