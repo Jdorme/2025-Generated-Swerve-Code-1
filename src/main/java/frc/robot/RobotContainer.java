@@ -22,6 +22,7 @@ import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.SafetyConstants;
 import frc.robot.Commands.ElevatorTest;
 import frc.robot.Commands.StowOnIntakeCommand;
+import frc.robot.Commands.AlgaeCommands.AlgaeNetCommand;
 import frc.robot.Commands.AlgaeCommands.FloorIntakePositionCommand;
 import frc.robot.Commands.AlgaeCommands.L2AlgaeCommand;
 import frc.robot.Commands.AlgaeCommands.L3AlgaeCommand;
@@ -204,8 +205,10 @@ public class RobotContainer {
 
         
         // Button to move to net position
-         joystick.b().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.setHeight(SafetyConstants.NET_ALGAE[0]), m_elevatorSubsystem));
-         joystick.b().onTrue(Commands.runOnce(() -> m_ArmSubsystem.setAngle(SafetyConstants.NET_ALGAE[1]), m_ArmSubsystem));
+       joystick.b().onTrue(new AlgaeNetCommand(m_elevatorSubsystem, m_ArmSubsystem, m_algaeIntake));
+
+        //  joystick.b().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.setHeight(SafetyConstants.NET_ALGAE[0]), m_elevatorSubsystem));
+        //  joystick.b().onTrue(Commands.runOnce(() -> m_ArmSubsystem.setAngle(SafetyConstants.NET_ALGAE[1]), m_ArmSubsystem));
         
             
 
