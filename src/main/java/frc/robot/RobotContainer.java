@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.SafetyConstants;
@@ -163,7 +164,17 @@ public class RobotContainer {
         joystick.povLeft().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povDown().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 4.0, 0));
-        //joystick.y().and(joystick.b()).onTrue(new L1ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
+        // Y+B combination (should come first)
+        joystick.y().and(joystick.b())
+        .onTrue(new L1ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
+
+        // Y only when B is not pressed
+        joystick.y().and(joystick.b().negate())
+        .onTrue(new L3AlgaeCommand(m_safetySystem, m_algaeIntake));
+
+        // B only when Y is not pressed
+        joystick.b().and(joystick.y().negate())
+        .onTrue(new AlgaeNetCommand(m_safetySystem, m_algaeIntake));
         
         joystick.back().onTrue(new ArmClimbPositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
 
@@ -178,7 +189,7 @@ public class RobotContainer {
         drivetrain.registerTelemetry(logger::telemeterize);
 
         joystick.x().onTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
-        joystick.y().onTrue(new L3AlgaeCommand(m_safetySystem, m_algaeIntake));
+        
         // Add Reef Alignment Bindings
         // Align to the left side of the Reef AprilTag
         //joystick.a().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.LEFT,drive));
@@ -207,7 +218,8 @@ public class RobotContainer {
 
         
         // Button to move to net position
-       joystick.b().onTrue(new AlgaeNetCommand(m_safetySystem, m_algaeIntake));
+       // This is the correct way to do "B pressed but NOT Y pressed"
+    
 
         //  joystick.b().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.setHeight(SafetyConstants.NET_ALGAE[0]), m_elevatorSubsystem));
         //  joystick.b().onTrue(Commands.runOnce(() -> m_ArmSubsystem.setAngle(SafetyConstants.NET_ALGAE[1]), m_ArmSubsystem));
