@@ -29,7 +29,7 @@ public class L1ScoreCommand extends Command {
     
     private static final double ELEVATOR_TOLERANCE = 0.5;
     private static final double ARM_TOLERANCE = 2.0;
-    private static final double SCORING_TIME = .375;
+    private static final double SCORING_TIME = .185;
     
     public L1ScoreCommand(SafetySubsystem safetySystem, CoralIntake coralIntake, 
                          ElevatorSubsystem elevator, ArmSubsystem arm) {
@@ -106,7 +106,7 @@ public class L1ScoreCommand extends Command {
                 if (areBothAtTarget(SafetyConstants.L1[0], SafetyConstants.L1[1])) {
                     System.out.println("L1Score: Arm and elevator at scoring position, starting coral");
                     currentState = ScoreState.SCORING;
-                    m_coralIntake.reverse();
+                    m_coralIntake.slowReverse();
                     waitStartTime = System.currentTimeMillis();
                 }
                 break;
