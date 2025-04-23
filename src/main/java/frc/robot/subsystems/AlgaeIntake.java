@@ -17,7 +17,7 @@ public class AlgaeIntake extends SubsystemBase {
 
     // Control constants
     private static final double INTAKE_SPEED = 1;  // Using new, lower speed
-    private static final double REVERSE_SPEED = -1.0;
+    private static final double REVERSE_SPEED = -.5;
     private static final double HOLD_SPEED = 0.05;
     
 

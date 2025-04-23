@@ -6,10 +6,13 @@
     "Amarillo Center",
     "Amarillo Left",
     "Amarillo Right",
-    "Waco"
+    "Worlds Center Net",
+    "Waco",
+    "Worlds Center 3 Coral R"
   ],
   "autoFolders": [
     "Amarillo",
+    "Worlds",
     "Waco"
   ],
   "defaultMaxVel": 3.75,

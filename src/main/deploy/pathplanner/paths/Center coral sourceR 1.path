@@ -1,0 +1,84 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 5.782028687019215,
+        "y": 3.8204422240206326
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 6.297869323302156,
+        "y": 3.8755858819367406
+      },
+      "isLocked": false,
+      "linkedName": "CoralRightL"
+    },
+    {
+      "anchor": {
+        "x": 5.782028687019215,
+        "y": 2.8561987704918033
+      },
+      "prevControl": {
+        "x": 5.923972467111991,
+        "y": 3.0619946968192546
+      },
+      "nextControl": {
+        "x": 5.64008490692644,
+        "y": 2.6504028441643523
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.4984631147540983,
+        "y": 0.51859631147541
+      },
+      "prevControl": {
+        "x": 1.8428062551842426,
+        "y": 1.0239706072083776
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "SourceR"
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 1.588963963963964,
+      "maxWaypointRelativePos": 2.0,
+      "constraints": {
+        "maxVelocity": 2.5,
+        "maxAcceleration": 2.5,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.75,
+    "maxAcceleration": 3.75,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 144.13017648227867
+  },
+  "reversed": false,
+  "folder": "Worlds Center 3 Coral R",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "useDefaultConstraints": false
+}

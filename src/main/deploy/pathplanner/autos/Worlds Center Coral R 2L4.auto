@@ -1,0 +1,88 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "Stow"
+          }
+        },
+        {
+          "type": "race",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "L4Elevator"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Center coral start"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoL4ScoreCommand"
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoCoralIntakeCommand"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Center coral sourceR 1"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "race",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "L4Elevator"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Center coral coralBottomRightR"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoL4ScoreCommand"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": "Worlds",
+  "choreoAuto": false
+}

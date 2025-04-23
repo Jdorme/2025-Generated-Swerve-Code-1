@@ -1,0 +1,54 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 7.935860655737705,
+        "y": 4.942059426229508
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 7.184054213295944,
+        "y": 4.932954173320035
+      },
+      "isLocked": false,
+      "linkedName": "ToNetEnd"
+    },
+    {
+      "anchor": {
+        "x": 6.593237704918032,
+        "y": 4.942059426229508
+      },
+      "prevControl": {
+        "x": 6.842942488925302,
+        "y": 4.954205242129745
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.75,
+    "maxAcceleration": 3.75,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.2,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "reversed": false,
+  "folder": "Worlds Center Net",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "useDefaultConstraints": true
+}

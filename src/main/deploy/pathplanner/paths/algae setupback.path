@@ -1,0 +1,54 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 5.782028687019215,
+        "y": 3.8204422240206326
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 6.4600780505045865,
+        "y": 3.9189187233061062
+      },
+      "isLocked": false,
+      "linkedName": "CoralRightL"
+    },
+    {
+      "anchor": {
+        "x": 6.665163934428068,
+        "y": 4.030993852456203
+      },
+      "prevControl": {
+        "x": 5.8575953399585865,
+        "y": 3.7994399457500667
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "algaeSetup"
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.75,
+    "maxAcceleration": 3.75,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.2,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "reversed": false,
+  "folder": "Worlds Center Net",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "useDefaultConstraints": true
+}

@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.SafetyConstants;
 import frc.robot.Commands.ArmElevatorToPositionCommand;
+import frc.robot.Commands.AlgaeCommands.AutoAlgaeNetCommand;
 import frc.robot.Commands.AlgaeCommands.L2AlgaeCommand;
 import frc.robot.Commands.AlgaeCommands.L3AlgaeCommand;
 import frc.robot.Commands.CoralCommands.CoralIntakeL2AlgaeCommand;
@@ -62,6 +63,8 @@ public class AutoCommandFactory {
         NamedCommands.registerCommand("L4Elevator", new AutoElevatorArmL4Command(elevator, arm, coralIntake));
         NamedCommands.registerCommand("L3Elevator", new AutoElevatorArmL3Command(elevator, arm));
 
+        NamedCommands.registerCommand("Algae Net", new AutoAlgaeNetCommand(safetySystem, algaeIntake, elevator, arm));
+
         
         // Register intake actions
         NamedCommands.registerCommand("Algae Intake", Commands.run(() -> algaeIntake.intake(), algaeIntake)
@@ -76,6 +79,7 @@ public class AutoCommandFactory {
         NamedCommands.registerCommand("Coral Stop", Commands.runOnce(() -> coralIntake.stop(), coralIntake));
         NamedCommands.registerCommand("Coral Reverse", Commands.run(() -> coralIntake.reverse(), coralIntake)
             .withTimeout(1.0));
+            
 
         
     }
