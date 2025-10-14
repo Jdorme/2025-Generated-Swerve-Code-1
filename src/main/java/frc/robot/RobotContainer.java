@@ -28,8 +28,6 @@ import frc.robot.Commands.AlgaeCommands.FloorIntakePositionCommand;
 import frc.robot.Commands.AlgaeCommands.L2AlgaeCommand;
 import frc.robot.Commands.AlgaeCommands.L3AlgaeCommand;
 import frc.robot.Commands.AlgaeCommands.ProcessorCommand;
-import frc.robot.Commands.AutoAlign.AprilTagPathCommand;
-import frc.robot.Commands.AutoAlign.ReefAlignmentCommand;
 import frc.robot.Commands.CoralCommands.CoralIntakeL2AlgaeCommand;
 import frc.robot.Commands.CoralCommands.L1ScoreCommand;
 import frc.robot.Commands.CoralCommands.L2ScoreCommand;
@@ -49,10 +47,6 @@ import frc.robot.Commands.AlgaeProcessorScoreCommand;
 import frc.robot.Commands.ArmClimbPositionCommand;
 import frc.robot.Commands.ArmCommand;
 import frc.robot.Commands.SafeInitializationCommand;
-import frc.robot.subsystems.PhotonVisionSubsystem;
-
-
-
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
@@ -61,7 +55,9 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
     .withDeadband(MaxSpeed * 0.03)  // Reduced from 0.1 to 0.03
     .withRotationalDeadband(MaxAngularRate * 0.03)  // Reduced from 0.1 to 0.03
-    .withDriveRequestType(DriveRequestType.OpenLoopVoltage);    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+    .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+    
+    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -77,8 +73,8 @@ public class RobotContainer {
     private final EndgameLiftSubsystem m_endgameLift = new EndgameLiftSubsystem();
     private final SafeInitializationCommand m_safetyInitCommand = new SafeInitializationCommand(
     m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem);
-    private final PhotonVisionSubsystem m_photonVision = new PhotonVisionSubsystem();
-    private final ReefAlignmentCommand m_ReefAlignmentCommand = new ReefAlignmentCommand(drivetrain, m_photonVision, null, drive);
+    
+    // Replace PhotonVision with Limelight
     
     private final SendableChooser<Command> autoChooser;
     
@@ -99,18 +95,18 @@ public class RobotContainer {
      * This method registers all our commands with PathPlanner's named command system.
      */
     public void runSafetyInitialization() {
-    // Cancel any running commands that might interfere
-    CommandScheduler.getInstance().cancelAll();
-    
-    // Schedule the safety initialization command
-    m_safetyInitCommand.schedule();
-    
-    // Note: We don't wait for it to complete here, as that would block the robot thread
-    // The command will run in the background, preventing other commands from
-    // taking control of the subsystems until it's finished
-    
-    System.out.println("Safety initialization sequence started");
-}
+        // Cancel any running commands that might interfere
+        CommandScheduler.getInstance().cancelAll();
+        
+        // Schedule the safety initialization command
+        m_safetyInitCommand.schedule();
+        
+        // Note: We don't wait for it to complete here, as that would block the robot thread
+        // The command will run in the background, preventing other commands from
+        // taking control of the subsystems until it's finished
+        
+        System.out.println("Safety initialization sequence started");
+    }
 
     private void registerAutonomousCommands() {
         // Register commands using the AutoCommandFactory
@@ -128,8 +124,8 @@ public class RobotContainer {
     private void configureBindings() {
         drivetrain.setDefaultCommand(
         drivetrain.applyRequest(() ->
-        drive.withVelocityX(applyJoystickCurve(-joystick.getLeftY()) * (MaxSpeed/1.875))
-             .withVelocityY(applyJoystickCurve(-joystick.getLeftX()) * (MaxSpeed/1.875))
+        drive.withVelocityX(applyJoystickCurve((-joystick.getLeftY()) * (MaxSpeed/3)))
+             .withVelocityY(applyJoystickCurve((-joystick.getLeftX()) * (MaxSpeed/3)))
              .withRotationalRate(applyJoystickCurve(-joystick.getRightX()) * MaxAngularRate*1.125)
     )
 );
@@ -150,10 +146,7 @@ public class RobotContainer {
         );
 
         joystick.rightTrigger().whileTrue(new CoralIntakeL2AlgaeCommand(m_coralIntake, m_safetySystem));
-        //joystick.rightTrigger().whileTrue(Commands.run(() -> m_algaeIntake.intake()));
         joystick.leftTrigger().whileTrue(Commands.run(() -> m_algaeIntake.reverse()));
-
-//        joystick.x().whileTrue(new L2AlgaeCommand(m_algaeIntake, m_elevatorSubsystem,m_ArmSubsystem));
 
         m_endgameLift.setDefaultCommand(Commands.run(() -> m_endgameLift.stop(), m_endgameLift));
         joystick.rightBumper().whileTrue(Commands.run(() -> m_endgameLift.liftUp(), m_endgameLift));
@@ -164,94 +157,29 @@ public class RobotContainer {
         joystick.povLeft().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povDown().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 4.0, 0));
+        
         // Y+B combination (should come first)
         joystick.y().and(joystick.b())
         .onTrue(new L1ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
 
         // Y only when B is not pressed
-        joystick.y().and(joystick.b().negate())
-        .onTrue(new L3AlgaeCommand(m_safetySystem, m_algaeIntake));
+       // joystick.y().and(joystick.b().negate())
+        //.onTrue(new L3AlgaeCommand(m_safetySystem, m_algaeIntake));
 
         // B only when Y is not pressed
-        joystick.b().and(joystick.y().negate())
-        .onTrue(new AlgaeNetCommand(m_safetySystem, m_algaeIntake));
+        //joystick.b().and(joystick.y().negate())
+        //.onTrue(new AlgaeNetCommand(m_safetySystem, m_algaeIntake));
         
         joystick.back().onTrue(new ArmClimbPositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
-
-
-        // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        // joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        // joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        // joystick.start().and(jo\ystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         joystick.start().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
 
-        joystick.x().onTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
-        
-        // Add Reef Alignment Bindings
-        // Align to the left side of the Reef AprilTag
-        //joystick.a().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.LEFT,drive));
-        // joystick.a().onTrue(new AprilTagPathCommand( m_photonVision, 
-        // drivetrain, 
-        // .22, // Y-offset: 1 meter to the left of the tag 
-        // 2.5, // Max velocity: 3 m/s 
-        // 1.5, // Max acceleration: 2 m/s² 
-        // 6,7,8,9,10,11,17,18,19,20,21,22 ));// List of all allowed tag IDs ));
-        // joystick.b().onTrue(new AprilTagPathCommand( m_photonVision, 
-        // drivetrain, 
-        // -.22, // Y-offset: 1 meter to the left of the tag 
-        // 2.5, // Max velocity: 3 m/s 
-        // 1.5, // Max acceleration: 2 m/s² 
-        // 6,7,8,9,10,11,17,18,19,20,21,22));
-        //Align to the right side of the Reef AprilTag
-        //joystick.b().whileTrue(new ReefAlignmentCommand(drivetrain, m_photonVision, ReefAlignmentCommand.AlignmentSide.RIGHT,drive));
-
-        // Add Reef Alignment Bindings
-        // Align to the left side of the Reef AprilTag
-        
-        // Basic auto-align to nearest AprilTag
+        //joystick.x().onTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
         
         // Button to move to processor position
-        joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
-
-        
-        // Button to move to net position
-       // This is the correct way to do "B pressed but NOT Y pressed"
-    
-
-        //  joystick.b().onTrue(Commands.runOnce(() -> m_elevatorSubsystem.setHeight(SafetyConstants.NET_ALGAE[0]), m_elevatorSubsystem));
-        //  joystick.b().onTrue(Commands.runOnce(() -> m_ArmSubsystem.setAngle(SafetyConstants.NET_ALGAE[1]), m_ArmSubsystem));
-        
-            
-
-
-       // joystick.start().onTrue(new FloorIntakePositionCommand(m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem, m_algaeIntake));
-
-
-        // Add Reef Alignment Bindings
-        // Align to the left side of the Reef AprilTag
-        // joystick.x().onTrue(
-        //     Commands.runOnce(() -> 
-        //         new ReefAlignmentCommand(
-        //             drivetrain, 
-        //             m_visionSubsystem, 
-        //             ReefAlignmentCommand.AlignmentSide.LEFT
-        //         ).schedule()
-        //     )
-        // );
-
-        // // Align to the right side of the Reef AprilTag
-        // joystick.b().onTrue(
-        //     Commands.runOnce(() -> 
-        //         new ReefAlignmentCommand(
-        //             drivetrain, 
-        //             m_visionSubsystem, 
-        //             ReefAlignmentCommand.AlignmentSide.RIGHT
-        //         ).schedule()
-        //     )
-        // );
+        //joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
     }
 
     private double applyJoystickCurve(double input) {

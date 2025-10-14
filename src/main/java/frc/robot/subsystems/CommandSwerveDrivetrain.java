@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -15,11 +14,9 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
-import org.photonvision.EstimatedRobotPose;
-
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -27,23 +24,24 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.LimelightHelpers;
+import frc.robot.LimelightHelpers.PoseEstimate;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
  * Subsystem so it can easily be used in command-based projects.
- * Modified to integrate with PhotonVision for pose estimation.
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
+    private boolean odometrySeeded = false;
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -52,180 +50,286 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
-    /* PhotonVision integration */
-    private PhotonVisionSubsystem m_photonVision;
-    private boolean m_useVision = true;
-    private double m_lastVisionUpdateTime = 0;
-    private static final double kVisionUpdateRateLimit = 0.2; // Limit vision updates to 5 Hz (every 200ms)
-
-    private Pose2d m_lastVisionPose = null;
-private int m_consistentVisionCount = 0;
-    
-    /* Standard deviations for vision measurements */
-    private Matrix<N3, N1> m_defaultVisionStdDevs;
-    private Matrix<N3, N1> m_farVisionStdDevs;
-    private final double kFarVisionThreshold = 4.0; // meters - distance beyond which vision is considered "far"
-
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
 
-    /* Swerve requests to apply during SysId characterization */
+    /* SysId routines (unchanged) */
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
     private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
 
-    /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
     private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
-        new SysIdRoutine.Config(
-            null,        // Use default ramp rate (1 V/s)
-            Volts.of(4), // Reduce dynamic step voltage to 4 V to prevent brownout
-            null,        // Use default timeout (10 s)
-            // Log state with SignalLogger class
-            state -> SignalLogger.writeString("SysIdTranslation_State", state.toString())
-        ),
-        new SysIdRoutine.Mechanism(
-            output -> setControl(m_translationCharacterization.withVolts(output)),
-            null,
-            this
-        )
-    );
+        new SysIdRoutine.Config(null, Volts.of(4), null,
+            state -> SignalLogger.writeString("SysIdTranslation_State", state.toString())),
+        new SysIdRoutine.Mechanism(output -> setControl(m_translationCharacterization.withVolts(output)), null, this));
 
-    /* SysId routine for characterizing steer. This is used to find PID gains for the steer motors. */
     private final SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
-        new SysIdRoutine.Config(
-            null,        // Use default ramp rate (1 V/s)
-            Volts.of(7), // Use dynamic voltage of 7 V
-            null,        // Use default timeout (10 s)
-            // Log state with SignalLogger class
-            state -> SignalLogger.writeString("SysIdSteer_State", state.toString())
-        ),
-        new SysIdRoutine.Mechanism(
-            volts -> setControl(m_steerCharacterization.withVolts(volts)),
-            null,
-            this
-        )
-    );
+        new SysIdRoutine.Config(null, Volts.of(7), null,
+            state -> SignalLogger.writeString("SysIdSteer_State", state.toString())),
+        new SysIdRoutine.Mechanism(volts -> setControl(m_steerCharacterization.withVolts(volts)), null, this));
 
-    /*
-     * SysId routine for characterizing rotation.
-     * This is used to find PID gains for the FieldCentricFacingAngle HeadingController.
-     * See the documentation of SwerveRequest.SysIdSwerveRotation for info on importing the log to SysId.
-     */
     private final SysIdRoutine m_sysIdRoutineRotation = new SysIdRoutine(
-        new SysIdRoutine.Config(
-            /* This is in radians per second², but SysId only supports "volts per second" */
-            Volts.of(Math.PI / 6).per(Second),
-            /* This is in radians per second, but SysId only supports "volts" */
-            Volts.of(Math.PI),
-            null, // Use default timeout (10 s)
-            // Log state with SignalLogger class
-            state -> SignalLogger.writeString("SysIdRotation_State", state.toString())
-        ),
+        new SysIdRoutine.Config(Volts.of(Math.PI / 6).per(Second), Volts.of(Math.PI), null,
+            state -> SignalLogger.writeString("SysIdRotation_State", state.toString())),
         new SysIdRoutine.Mechanism(
             output -> {
-                /* output is actually radians per second, but SysId only supports "volts" */
                 setControl(m_rotationCharacterization.withRotationalRate(output.in(Volts)));
-                /* also log the requested output for SysId */
                 SignalLogger.writeDouble("Rotational_Rate", output.in(Volts));
             },
-            null,
-            this
-        )
-    );
+            null, this));
 
-    /* The SysId routine to test */
     private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineTranslation;
 
-    /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants and PhotonVision subsystem.
-     *
-     * @param drivetrainConstants   Drivetrain-wide constants for the swerve drive
-     * @param modules               Constants for each specific module
-     */
-    public CommandSwerveDrivetrain(
-        SwerveDrivetrainConstants drivetrainConstants,
-        SwerveModuleConstants<?, ?, ?>... modules
-    ) {
+    // ---------------- Limelight vision state ----------------
+    private PoseEstimate farmOne, farmTwo, bestPose;
+    private boolean useMegaTag2 = true;   // switch between pipeline modes
+    private double angularVelocity = 0.0;  // update from gyro if needed
+
+    // ---------------- Constructors ----------------
+    public CommandSwerveDrivetrain(SwerveDrivetrainConstants drivetrainConstants,
+                                   SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, modules);
-        m_photonVision = new PhotonVisionSubsystem();
-        initializeVisionStdDevs();
-        
-        if (Utils.isSimulation()) {
-            startSimThread();
-        }
+        if (Utils.isSimulation()) startSimThread();
         configureAutoBuilder();
+        setupLimelights();
     }
 
-    /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants and PhotonVision subsystem.
-     *
-     * @param drivetrainConstants     Drivetrain-wide constants for the swerve drive
-     * @param odometryUpdateFrequency The frequency to run the odometry loop
-  
-     * @param modules                 Constants for each specific module
-     */
-    public CommandSwerveDrivetrain(
-        SwerveDrivetrainConstants drivetrainConstants,
-        double odometryUpdateFrequency,
-        SwerveModuleConstants<?, ?, ?>... modules
-    ) {
+    public CommandSwerveDrivetrain(SwerveDrivetrainConstants drivetrainConstants,
+                                   double odometryUpdateFrequency,
+                                   SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, odometryUpdateFrequency, modules);
-        m_photonVision = new PhotonVisionSubsystem();
-        initializeVisionStdDevs();
-        
-        if (Utils.isSimulation()) {
-            startSimThread();
-        }
+        if (Utils.isSimulation()) startSimThread();
         configureAutoBuilder();
+        setupLimelights();
     }
 
-    /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants and PhotonVision subsystem.
-     *
-     * @param drivetrainConstants       Drivetrain-wide constants for the swerve drive
-     * @param odometryUpdateFrequency   The frequency to run the odometry loop
-     * @param odometryStandardDeviation The standard deviation for odometry calculation
-     * @param visionStandardDeviation   The standard deviation for vision calculation
-
-     * @param modules                   Constants for each specific module
-     */
-    public CommandSwerveDrivetrain(
-        SwerveDrivetrainConstants drivetrainConstants,
-        double odometryUpdateFrequency,
-        Matrix<N3, N1> odometryStandardDeviation,
-        Matrix<N3, N1> visionStandardDeviation,
-        SwerveModuleConstants<?, ?, ?>... modules
-    ) {
+    public CommandSwerveDrivetrain(SwerveDrivetrainConstants drivetrainConstants,
+                                   double odometryUpdateFrequency,
+                                   Matrix<N3, N1> odometryStandardDeviation,
+                                   Matrix<N3, N1> visionStandardDeviation,
+                                   SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation, modules);
-        m_photonVision = new PhotonVisionSubsystem();
-        m_defaultVisionStdDevs = visionStandardDeviation;
-        initializeVisionStdDevs();
-        
-        if (Utils.isSimulation()) {
-            startSimThread();
-        }
+        if (Utils.isSimulation()) startSimThread();
         configureAutoBuilder();
+        setupLimelights();
     }
 
-    /**
-     * Initialize the standard deviations for vision measurements
-     */
-    private void initializeVisionStdDevs() {
-        // If default vision std devs weren't initialized in the constructor
-        if (m_defaultVisionStdDevs == null) {
-            // Create default standard deviations - moderate trust in vision
-            m_defaultVisionStdDevs = new Matrix<>(N3.instance, N1.instance);
-            m_defaultVisionStdDevs.set(0, 0, .25);  // X standard deviation (meters)0.25
-            m_defaultVisionStdDevs.set(1, 0, .25);  // Y standard deviation (meters).25
-            m_defaultVisionStdDevs.set(2, 0, 0.25);  // Rotation standard deviation (radians).1
+    // ---------------- Limelight Setup ----------------
+    public void setupLimelights() {
+        try {
+            // Initialize both Limelights
+            LimelightHelpers.setPipelineIndex("limelight-elevato", 0);
+            LimelightHelpers.setLEDMode_PipelineControl("limelight-elevato");
+            //LimelightHelpers.setCameraMode_Driver("limelight-elevato", false);
+            LimelightHelpers.setPipelineIndex("limelight-climber", 0);
+            LimelightHelpers.setLEDMode_PipelineControl("limelight-climber");
+            //LimelightHelpers.setCameraMode_Driver("limelight-climber", false);
+            SmartDashboard.putString("Limelight Setup", "OK");
+        } catch (Exception e) {
+            SmartDashboard.putString("Limelight Setup", "Error initializing Limelights");
+        }
+        SmartDashboard.putBoolean("Use MegaTag2", useMegaTag2);
+        SmartDashboard.putBoolean("Enable Vision", true);
+    }
+
+    // ---------------- Limelight Mode Update ----------------
+    public void updateLimelightMode() {
+        boolean megaTag2Enabled = SmartDashboard.getBoolean("Use MegaTag2", useMegaTag2);
+        boolean visionEnabled = SmartDashboard.getBoolean("Enable Vision", true);
+        useMegaTag2 = megaTag2Enabled;
+        if (!visionEnabled) return;
+        
+        // CRITICAL: Use the fused pose estimate rotation, NOT raw gyro
+        // This includes both odometry and vision corrections
+        double yawDegrees = getState().Pose.getRotation().getDegrees();
+        
+        // For angular velocity, raw gyro is fine since it's instantaneous
+        double yawRate = getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
+        
+        // Get pitch and roll from gyro (these don't need fusion for swerve)
+        double pitchDegrees = getPigeon2().getPitch().getValueAsDouble();
+        double rollDegrees = getPigeon2().getRoll().getValueAsDouble();
+        SmartDashboard.putNumber("Robot Heading (deg)", getState().Pose.getRotation().getDegrees());
+        
+        // Set robot orientation for both Limelights
+        LimelightHelpers.SetRobotOrientation("limelight-elevato", 
+            yawDegrees, yawRate, 
+            pitchDegrees, 0,
+            rollDegrees, 0);
+            
+        LimelightHelpers.SetRobotOrientation("limelight-climber", 
+            yawDegrees, yawRate, 
+            pitchDegrees, 0, 
+            rollDegrees, 0);
+        
+        // Debug output
+        SmartDashboard.putNumber("Fused Rotation (deg)", yawDegrees);
+        SmartDashboard.putNumber("Raw Gyro (deg)", 
+        MathUtil.inputModulus(getPigeon2().getRotation2d().getDegrees(), 0, 360));
+        SmartDashboard.putNumber("Angular Velocity (deg/s)", yawRate);
+    }
+
+    // ---------------- Limelight Update ----------------
+    public void updateOdometryWithVision() {
+        boolean visionPoseAccepted = false; 
+    
+        
+        // --- Query both Limelights with appropriate pipeline mode ---
+        PoseEstimate farmOneForSeeding = null;
+        PoseEstimate farmTwoForSeeding = null;
+        
+        if (!odometrySeeded) {
+            // For seeding, always use non-MegaTag2 to get better heading
+            farmOneForSeeding = safeGetPose("limelight-elevato", false);  // false = non-MegaTag2
+            farmTwoForSeeding = safeGetPose("limelight-climber", false);  // false = non-MegaTag2
         }
         
-        // Create higher standard deviations for far vision measurements - less trust
-        m_farVisionStdDevs = new Matrix<>(N3.instance, N1.instance);
-        m_farVisionStdDevs.set(0, 0, 1.5);  // X standard deviation (meters) 1.5
-        m_farVisionStdDevs.set(1, 0, 1.5);  // Y standard deviation (meters)
-        m_farVisionStdDevs.set(2, 0, 0.25);  // Rotation standard deviation (radians)
+        // For regular updates, use the configured pipeline mode
+        farmOne = safeGetPose("limelight-elevato", useMegaTag2);
+        farmTwo = safeGetPose("limelight-climber", useMegaTag2);
+    
+        // --- Debug raw values ---
+        if (farmOne != null) {
+            SmartDashboard.putNumber("Eleavto_raw_tagCount", farmOne.tagCount);
+            SmartDashboard.putNumber("Eleavto_raw_X", farmOne.pose.getX());
+            SmartDashboard.putNumber("Eleavto_raw_Y", farmOne.pose.getY());
+        } else {
+            SmartDashboard.putString("Eleavto_raw", "null");
+        }
+    
+        if (farmTwo != null) {
+            SmartDashboard.putNumber("Climber_raw_tagCount", farmTwo.tagCount);
+            SmartDashboard.putNumber("Climber_raw_X", farmTwo.pose.getX());
+            SmartDashboard.putNumber("Climber_raw_Y", farmTwo.pose.getY());
+        } else {
+            SmartDashboard.putString("Climber_raw", "null");
+        }
+    
+        // --- If first valid vision, seed odometry with non-MegaTag2 pose ---
+        if (!odometrySeeded) {
+            boolean rejectOneSeeding = shouldReject(farmOneForSeeding, "limelight-elevato");
+            boolean rejectTwoSeeding = shouldReject(farmTwoForSeeding, "limelight-climber");
+            
+            PoseEstimate seedingPose = pickBestPose(farmOneForSeeding, farmTwoForSeeding, rejectOneSeeding, rejectTwoSeeding);
+            
+            if (seedingPose != null) {
+                SmartDashboard.putString("Seeding Camera", 
+                    seedingPose == farmOneForSeeding ? "limelight-elevato" : "limelight-climber");
+                SmartDashboard.putNumber("Seeding X", seedingPose.pose.getX());
+                SmartDashboard.putNumber("Seeding Y", seedingPose.pose.getY());
+                SmartDashboard.putNumber("Seeding Heading (deg)", seedingPose.pose.getRotation().getDegrees());
+                SmartDashboard.putNumber("Seeding Tag Count", seedingPose.tagCount);
+                
+                resetPose(seedingPose.pose); // reset odometry with non-MegaTag2 pose (better heading)
+                odometrySeeded = true;
+                SmartDashboard.putString("Odometry Seed", "Seeding done with non-MegaTag2");
+                
+                // Don't do regular vision fusion this cycle since we just seeded
+                return;
+            }
+        }
+    
+        // --- Regular vision fusion (after seeding) ---
+        if (odometrySeeded) {
+            // Reject bad estimates for regular updates
+            boolean rejectOne = shouldReject(farmOne, "limelight-elevato");
+            boolean rejectTwo = shouldReject(farmTwo, "Limelight-climber");
+
+            // Pick best pose for regular updates
+            bestPose = pickBestPose(farmOne, farmTwo, rejectOne, rejectTwo);
+            
+            // Determine which Limelight was selected
+            String bestLimelight = null;
+            if (bestPose == farmOne) bestLimelight = "limelight-elevato";
+            else if (bestPose == farmTwo) bestLimelight = "limelight-climber";
+
+            // Fuse if valid
+            if (bestPose != null && bestLimelight != null) {
+                double latencySec = LimelightHelpers.getLatency_Pipeline(bestLimelight) / 1000.0;
+                double correctedTimestamp = Utils.getCurrentTimeSeconds() - latencySec;
+                setVisionMeasurementStdDevs(VecBuilder.fill(0.7, 0.7, 9999999));
+                addVisionMeasurement(bestPose.pose, correctedTimestamp);
+                visionPoseAccepted = true;
+                
+                // Debug output
+                double now = Utils.getCurrentTimeSeconds();
+                SmartDashboard.putNumber("Vision Delta Time (s)", now - correctedTimestamp);
+            }
+        }
+    
+        // --- Publish status ---
+        SmartDashboard.putBoolean("Vision Pose Accepted", visionPoseAccepted);
+        SmartDashboard.putBoolean("Odometry Seeded", odometrySeeded);
+    
+        if (bestPose != null) {
+            SmartDashboard.putNumber("Vision Tag Count", bestPose.tagCount);
+            SmartDashboard.putNumber("Vision X", bestPose.pose.getX());
+            SmartDashboard.putNumber("Vision Y", bestPose.pose.getY());
+            SmartDashboard.putNumber("Vision Heading", bestPose.pose.getRotation().getDegrees());
+        } else {
+            SmartDashboard.putString("Vision Status", "no bestPose");
+        }
     }
 
+    private PoseEstimate safeGetPose(String limelight, boolean megaTag2) {
+        try {
+            // Always use Blue origin regardless of alliance
+            // The swerve drivetrain handles alliance flipping internally
+            return megaTag2
+                ? LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelight)
+                : LimelightHelpers.getBotPoseEstimate_wpiBlue(limelight);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private boolean shouldReject(PoseEstimate est, String name) {
+        if (est == null) {
+            SmartDashboard.putString(name + " Status", "Disconnected");
+            return true;
+        }
+        SmartDashboard.putString(name + " Status", "Ready");
+
+        if (est.tagCount == 0) return true;
+        
+        // Reject if spinning too fast (from Limelight example)
+        double angularVelocity = Math.abs(getPigeon2().getAngularVelocityZWorld().getValueAsDouble());
+        if (angularVelocity > 360) {
+            SmartDashboard.putString(name + " Reject Reason", "Spinning too fast");
+            return true;
+        }
+        
+        if (est.tagCount == 1 && est.rawFiducials.length == 1) {
+            // Add debug output for both cameras
+            SmartDashboard.putNumber(name + " Ambiguity", est.rawFiducials[0].ambiguity);
+            SmartDashboard.putNumber(name + " Distance", est.rawFiducials[0].distToCamera);
+            
+            if (est.rawFiducials[0].ambiguity > 0.7) {
+                SmartDashboard.putString(name + " Reject Reason", "High ambiguity");
+                return true;
+            }
+            if (est.rawFiducials[0].distToCamera > 3.0) {
+                SmartDashboard.putString(name + " Reject Reason", "Too far");
+                return true;
+            }
+        }
+        
+        SmartDashboard.putString(name + " Reject Reason", "Accepted");
+        return false;
+    }
+
+    private PoseEstimate pickBestPose(PoseEstimate one, PoseEstimate two, boolean rejectOne, boolean rejectTwo) {
+        if (!rejectOne && !rejectTwo) {
+            return (one.avgTagArea >= two.avgTagArea) ? one : two;
+        } else if (!rejectOne) {
+            return one;
+        } else if (!rejectTwo) {
+            return two;
+        }
+        return null;
+    }
+    
+
+    // ---------------- PathPlanner ----------------
     private void configureAutoBuilder() {
         try {
             var config = RobotConfig.fromGUISettings();
@@ -233,74 +337,34 @@ private int m_consistentVisionCount = 0;
                 () -> getState().Pose,   // Supplier of current robot pose
                 this::resetPose,         // Consumer for seeding pose against auto
                 () -> getState().Speeds, // Supplier of current robot speeds
-                // Consumer of ChassisSpeeds and feedforwards to drive the robot
                 (speeds, feedforwards) -> setControl(
                     m_pathApplyRobotSpeeds.withSpeeds(speeds)
                         .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
-                        .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
-                ),
+                        .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())),
                 new PPHolonomicDriveController(
-                    // PID constants for translation
                     new PIDConstants(10, 0, 0),
-                    // PID constants for rotation
-                    new PIDConstants(7, 0, 0)
-                ),
+                    new PIDConstants(7, 0, 0)),
                 config,
-                // Assume the path needs to be flipped for Red vs Blue, this is normally the case
                 () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
-                this // Subsystem for requirements
-            );
+                this);
         } catch (Exception ex) {
             DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
         }
     }
 
     /**
-     * Set the PhotonVision subsystem to use for pose estimation
-     * @param photonVision The PhotonVision subsystem to use
-     */
-    public void setPhotonVision(PhotonVisionSubsystem photonVision) {
-        m_photonVision = photonVision;
-        SmartDashboard.putBoolean("Drivetrain/HasVision", photonVision != null);
-    }
-    
-    /**
-     * Enable or disable the use of vision for pose estimation
-     * @param useVision Whether to use vision for pose estimation
-     */
-    public void setUseVision(boolean useVision) {
-        m_useVision = useVision;
-        SmartDashboard.putBoolean("Drivetrain/UseVision", useVision);
-    }
-
-    /**
      * Returns a command that applies the specified control request to this swerve drivetrain.
-     *
-     * @param request Function returning the request to apply
-     * @return Command to run
      */
     public Command applyRequest(Supplier<SwerveRequest> requestSupplier) {
         return run(() -> this.setControl(requestSupplier.get()));
     }
 
-    /**
-     * Runs the SysId Quasistatic test in the given direction for the routine
-     * specified by {@link #m_sysIdRoutineToApply}.
-     *
-     * @param direction Direction of the SysId Quasistatic test
-     * @return Command to run
-     */
+    /** SysId Quasistatic */
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.quasistatic(direction);
     }
 
-    /**
-     * Runs the SysId Dynamic test in the given direction for the routine
-     * specified by {@link #m_sysIdRoutineToApply}.
-     *
-     * @param direction Direction of the SysId Dynamic test
-     * @return Command to run
-     */
+    /** SysId Dynamic */
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.dynamic(direction);
     }
@@ -318,165 +382,27 @@ private int m_consistentVisionCount = 0;
                 m_hasAppliedOperatorPerspective = true;
             });
         }
-        
-        // Update pose with vision measurements
-        updatePoseWithVision();
-        
-        // Log current pose to SmartDashboard
-        Pose2d currentPose = getState().Pose;
-        SmartDashboard.putNumber("Drivetrain/Pose/X", currentPose.getX());
-        SmartDashboard.putNumber("Drivetrain/Pose/Y", currentPose.getY());
-        SmartDashboard.putNumber("Drivetrain/Pose/Rotation", currentPose.getRotation().getDegrees());
-    }
-    
-    /**
-     * Update the robot pose using vision measurements from PhotonVision
-     */
-    /**
- * Update the robot pose using vision measurements from PhotonVision
- */
-/**
- * Update the robot pose using vision measurements from PhotonVision
- */
-/**
- * Update the robot pose using vision measurements from PhotonVision
- */
-/**
- * Update the robot pose using vision measurements from PhotonVision
- */
-private void updatePoseWithVision() {
-    // If vision is disabled or PhotonVision subsystem not initialized, skip
-    if (!m_useVision || m_photonVision == null) {
-        return;
-    }
-    
-    // Throttle vision updates to avoid overwhelming the pose estimator
-    double currentTime = Timer.getFPGATimestamp();
-    if (currentTime - m_lastVisionUpdateTime < kVisionUpdateRateLimit) {
-        return;
-    }
-    
-    // Get the best estimated pose from PhotonVision
-    Optional<EstimatedRobotPose> visionPose = m_photonVision.getBestEstimatedPose();
-    
-    if (visionPose.isPresent()) {
-        EstimatedRobotPose pose = visionPose.get();
-        
-        // Convert Pose3d to Pose2d
-        Pose2d visionPose2d = pose.estimatedPose.toPose2d();
-        
-        // Get the confidence in the vision measurement
-        double poseConfidence = m_photonVision.calculatePoseConfidence(pose);
-        
-        // Check if we should use this vision measurement
-        if (poseConfidence > 0.43) { // Minimum confidence threshold
-            // Get current pose from odometry
-            Pose2d currentPose = getState().Pose;
 
-            // Calculate differences between current pose and vision pose
-            double positionDifference = currentPose.getTranslation().getDistance(visionPose2d.getTranslation());
-            double rotationDifference = Math.abs(currentPose.getRotation().minus(visionPose2d.getRotation()).getDegrees());
+        // Update Limelight orientation before vision update
+        updateLimelightMode();
+        
+        // Auto-update vision each cycle
+        updateOdometryWithVision();
+        
+        SmartDashboard.putNumber("Robot X (m)", getState().Pose.getX());
 
-            // Log the differences
-            SmartDashboard.putNumber("Drivetrain/Vision/PositionDifference", positionDifference);
-            SmartDashboard.putNumber("Drivetrain/Vision/RotationDifference", rotationDifference);
-
-            // Track consistent vision poses using static variables
-            if (m_lastVisionPose == null) {
-                m_lastVisionPose = visionPose2d;
-                m_consistentVisionCount = 1;
-            } else {
-                // Check if this vision pose is close to the last one
-                double visionPoseDifference = m_lastVisionPose.getTranslation().getDistance(visionPose2d.getTranslation());
-                double visionRotationDifference = Math.abs(m_lastVisionPose.getRotation().minus(visionPose2d.getRotation()).getDegrees());
-                
-                if (visionPoseDifference < 0.3 && visionRotationDifference < 10) {
-                    // Vision pose is consistent with previous one
-                    m_consistentVisionCount++;
-                    SmartDashboard.putNumber("Drivetrain/Vision/ConsistentCount", m_consistentVisionCount);
-                } else {
-                    // Vision pose is different, reset counter
-                    m_lastVisionPose = visionPose2d;
-                    m_consistentVisionCount = 1;
-                    SmartDashboard.putNumber("Drivetrain/Vision/ConsistentCount", m_consistentVisionCount);
-                }
-            }
-            
-            // Check if this is an initialization case or robot is disabled
-            boolean isInitialization = m_lastVisionUpdateTime == 0 || 
-                                      (Math.abs(currentPose.getX()) < 0.1 && 
-                                       Math.abs(currentPose.getY()) < 0.1);
-            boolean isRobotDisabled = !DriverStation.isEnabled();
-            boolean hasConsistentVision = m_consistentVisionCount >= 3; // Require 3 consistent vision poses
-            
-            // Accept vision updates if:
-            // 1. During initialization, OR
-            // 2. When robot is disabled, OR
-            // 3. When position/rotation differences are within thresholds, OR
-            // 4. When we have consistent vision poses
-            if (isInitialization || isRobotDisabled || 
-                (positionDifference < 0.5 && rotationDifference < 15) ||
-                hasConsistentVision) {
-                
-                // Calculate average distance to AprilTags
-                double avgDistance = 0.0;
-                for (var target : pose.targetsUsed) {
-                    avgDistance += target.getBestCameraToTarget().getTranslation().getNorm();
-                }
-                avgDistance /= pose.targetsUsed.size();
-                
-                // Use appropriate standard deviations based on distance
-                Matrix<N3, N1> visionStdDevs = avgDistance > kFarVisionThreshold ? 
-                    m_farVisionStdDevs : m_defaultVisionStdDevs;
-                
-                // Apply lower standard deviations (more trust) for multi-tag poses
-                if (pose.targetsUsed.size() > 1) {
-                    visionStdDevs = visionStdDevs.times(0.7); // 30% lower std devs for multi-tag
-                }
-                
-                // During initialization or when disabled, trust vision more (lower std devs)
-                if (isInitialization || isRobotDisabled) {
-                    visionStdDevs = visionStdDevs.times(0.5); // 50% lower std devs
-                } else if (hasConsistentVision && positionDifference > 0.5) {
-                    // For consistent vision that's far from current pose, use higher std devs
-                    // This allows gradual correction instead of jumping
-                    visionStdDevs = visionStdDevs.times(2.0 + positionDifference);
-                    SmartDashboard.putBoolean("Drivetrain/Vision/GradualCorrection", true);
-                }
-                
-                // Log special conditions
-                if (isInitialization) {
-                    SmartDashboard.putBoolean("Drivetrain/Vision/Initialization", true);
-                }
-                if (isRobotDisabled) {
-                    SmartDashboard.putBoolean("Drivetrain/Vision/DisabledUpdate", true);
-                }
-                if (hasConsistentVision) {
-                    SmartDashboard.putBoolean("Drivetrain/Vision/ConsistentVision", true);
-                }
-                
-                // Apply the vision measurement to the pose estimator
-                addVisionMeasurement(visionPose2d, pose.timestampSeconds, visionStdDevs);
-                
-                // Log vision update details
-                SmartDashboard.putNumber("Drivetrain/Vision/UpdateTime", currentTime);
-                SmartDashboard.putNumber("Drivetrain/Vision/Confidence", poseConfidence);
-                SmartDashboard.putNumber("Drivetrain/Vision/AvgDistance", avgDistance);
-                SmartDashboard.putNumber("Drivetrain/Vision/TagCount", pose.targetsUsed.size());
-                SmartDashboard.putBoolean("Drivetrain/Vision/UpdateAccepted", true);
-                m_lastVisionUpdateTime = currentTime;
-            } else {
-                // Log rejected update
-                SmartDashboard.putBoolean("Drivetrain/Vision/UpdateAccepted", false);
-                SmartDashboard.putString("Drivetrain/Vision/RejectionReason", 
-                    "Position diff: " + String.format("%.2f", positionDifference) + 
-                    ", Rotation diff: " + String.format("%.2f", rotationDifference));
-            }
+        
+        SmartDashboard.putNumber("Robot Y (m)", getState().Pose.getY());
+        SmartDashboard.putNumber("Robot Heading (deg)", getState().Pose.getRotation().getDegrees());
+        
+        if (bestPose != null) {
+            SmartDashboard.putNumber("Vision Tag Count", bestPose.tagCount);
+            SmartDashboard.putNumber("Vision X", bestPose.pose.getX());
+            SmartDashboard.putNumber("Vision Y", bestPose.pose.getY());
+            SmartDashboard.putNumber("Vision Heading", bestPose.pose.getRotation().getDegrees());
         }
     }
 
-
-}
     private void startSimThread() {
         m_lastSimTime = Utils.getCurrentTimeSeconds();
 
@@ -490,39 +416,5 @@ private void updatePoseWithVision() {
             updateSimState(deltaTime, RobotController.getBatteryVoltage());
         });
         m_simNotifier.startPeriodic(kSimLoopPeriod);
-    }
-
-    /**
-     * Adds a vision measurement to the Kalman Filter. This will correct the odometry pose estimate
-     * while still accounting for measurement noise.
-     *
-     * @param visionRobotPoseMeters The pose of the robot as measured by the vision camera.
-     * @param timestampSeconds The timestamp of the vision measurement in seconds.
-     */
-    @Override
-    public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds) {
-        super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds));
-    }
-
-    /**
-     * Adds a vision measurement to the Kalman Filter. This will correct the odometry pose estimate
-     * while still accounting for measurement noise.
-     * <p>
-     * Note that the vision measurement standard deviations passed into this method
-     * will continue to apply to future measurements until a subsequent call to
-     * {@link #setVisionMeasurementStdDevs(Matrix)} or this method.
-     *
-     * @param visionRobotPoseMeters The pose of the robot as measured by the vision camera.
-     * @param timestampSeconds The timestamp of the vision measurement in seconds.
-     * @param visionMeasurementStdDevs Standard deviations of the vision pose measurement
-     *     in the form [x, y, theta]ᵀ, with units in meters and radians.
-     */
-    @Override
-    public void addVisionMeasurement(
-        Pose2d visionRobotPoseMeters,
-        double timestampSeconds,
-        Matrix<N3, N1> visionMeasurementStdDevs
-    ) {
-        super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds), visionMeasurementStdDevs);
     }
 }
