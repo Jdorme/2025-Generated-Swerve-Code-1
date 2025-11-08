@@ -9,6 +9,7 @@ import edu.wpi.first.units.measure.Distance;
 
 /** Add your docs here. */
 public class Constants {
+    
 
 public static final class AlgaeIntakeConstants {
 
@@ -93,47 +94,32 @@ public static final class EndgameLiftConstants {
 
 // Add this to your existing Constants.java file
 
-public static final class ReefAlignmentConstants {
-    // Camera Selection - update these with your actual camera IDs
-    public static final String LEFT_POLE_CAMERA = "ElevatorCam";  // Camera for left pole alignment
-    public static final String RIGHT_POLE_CAMERA = "EndGameCam";  // Camera for right pole alignment
+public static final class ReefAlignConstants {
+    // PID Controllers
+    /*
+    P (Proportional)** - How aggressively to correct errors
+    - Too LOW: Robot moves slowly, takes forever to align
+    - Too HIGH: Robot oscillates/shakes back and forth
+    - Start at 2.0 for translation, 0.05 for rotation
+    */
+    public static final double X_REEF_ALIGNMENT_P = 0.25;
+    public static final double Y_REEF_ALIGNMENT_P = 0.25;
+    public static final double ROT_REEF_ALIGNMENT_P = 0.05;
     
-    // Tag Alignment Configuration
-    public static final int[] VALID_REEF_TAG_IDS_BLUE = {17, 18, 19, 20, 21, 22};
-    public static final int[] VALID_REEF_TAG_IDS_RED = {6, 7, 8, 9, 10, 11};
+    // Setpoints
+    public static final double X_SETPOINT_REEF_ALIGNMENT = -.2;// meters from tag
+    public static final double rightY_SETPOINT_REEF_ALIGNMENT = 0.2;// meters to the side
+    public static final double leftY_SETPOINT_REEF_ALIGNMENT = 0;// meters to the side
+    public static final double ROT_SETPOINT_REEF_ALIGNMENT = -31;// face tag directly
     
-    // Alignment Distance Parameters
-    public static final double TARGET_DISTANCE = 0.6; // meters from tag
+    // Tolerances
+    public static final double X_TOLERANCE_REEF_ALIGNMENT = 0.05;// 5cm
+    public static final double Y_TOLERANCE_REEF_ALIGNMENT = 0.05;// 5cm
+    public static final double ROT_TOLERANCE_REEF_ALIGNMENT = 3.0;// 3 degrees
     
-    // Tolerance Parameters
-    public static final double ALIGNMENT_TOLERANCE_METERS = 0.05; 
-    public static final double ROTATION_TOLERANCE_DEGREES = 2.0;
-    
-    // Retry Mechanism
-    public static final int MAX_DETECTION_ATTEMPTS = 3;
-    public static final double DETECTION_RETRY_DELAY_SECONDS = 0.5;
-    public static final double ALIGNMENT_TIMEOUT_SECONDS = 10.0;
-    
-    // PID Configuration for X Alignment
-    public static final class XAxisPID {
-        public static final double kP = 1.5;
-        public static final double kI = 0.0;
-        public static final double kD = 0.1;
-    }
-    
-    // PID Configuration for Y Alignment
-    public static final class YAxisPID {
-        public static final double kP = 1.5;
-        public static final double kI = 0.0;
-        public static final double kD = 0.1;
-    }
-    
-    // PID Configuration for Rotation Alignment
-    public static final class RotationPID {
-        public static final double kP = 0.05;
-        public static final double kI = 0.0;
-        public static final double kD = 0.005;
-    }
+    // Timing
+    public static final double DONT_SEE_TAG_WAIT_TIME = 2.0;// seconds
+    public static final double POSE_VALIDATION_TIME = 0.3;// seconds
 }
 
 // Add to Constants.java

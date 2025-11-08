@@ -3,9 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.configs.TalonFXSConfiguration;
-import com.ctre.phoenix6.signals.MotorArrangementValue;
-//import com.ctre.phoenix6.hardware.TalonFXS.MotorInvertedValue;
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.hardware.CANrange;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -67,17 +65,17 @@ public class CoralIntake extends SubsystemBase {
     }
     
     private void configureMotor() {
-      //  var motorConfig = new TalonFXSConfiguration();
+        TalonFXSConfiguration motorConfig = new TalonFXSConfiguration();
         
-        // Set motor arrangement to Minion
-       // motorConfig.MotorOutput.Inverted = TalonFXS.MotorInvertedValue.CounterClockwise_Positive;
-       TalonFXSConfiguration motorConfig = new TalonFXSConfiguration();
-    motorConfig.Commutation.MotorArrangement = MotorArrangementValue.Minion_JST;
+        // Configure for Kraken X44 motor
+        // Set motor inversion if needed (adjust based on your mechanism's direction requirements)
+        motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         
-        //motorConfig.Feedback.SensorToMechanismRatio = PULLEY_RATIO;
+        // Current limiting
         motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         motorConfig.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
         
+        // Apply configuration
         intakeMotor.getConfigurator().apply(motorConfig);
         intakeMotor.setNeutralMode(NeutralModeValue.Brake);
     }

@@ -46,7 +46,7 @@ public class L4ScoreCommand extends Command {
         currentState = ScoreState.ELEVATOR_UP;
         // Start by moving elevator to L4 height
         m_elevator.setHeight(SafetyConstants.L4[0]);
-        m_arm.setAngle(34); // Ensure arm is at zero while elevator moves
+        m_arm.setAngle(25); // Ensure arm is at zero while elevator moves
     }
 
     private boolean isElevatorAtTarget() {
@@ -122,7 +122,7 @@ public class L4ScoreCommand extends Command {
 
             case ARM_BACK:
                 // Wait for arm to return to zero
-                if (isArmAtTarget(34)) {
+                if (m_arm.getCurrentAngle() <= 20) {
                     System.out.println("L4Score: Arm at zero, lowering elevator");
                     // Intake already stopped in SCORING state
                     currentState = ScoreState.ELEVATOR_STOW;

@@ -6,6 +6,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -28,6 +29,8 @@ import frc.robot.Commands.AlgaeCommands.FloorIntakePositionCommand;
 import frc.robot.Commands.AlgaeCommands.L2AlgaeCommand;
 import frc.robot.Commands.AlgaeCommands.L3AlgaeCommand;
 import frc.robot.Commands.AlgaeCommands.ProcessorCommand;
+import frc.robot.Commands.AutoAlign.AlignToReefTagLeft;
+import frc.robot.Commands.AutoAlign.AlignToReefTagRight;
 import frc.robot.Commands.CoralCommands.CoralIntakeL2AlgaeCommand;
 import frc.robot.Commands.CoralCommands.L1ScoreCommand;
 import frc.robot.Commands.CoralCommands.L2ScoreCommand;
@@ -73,19 +76,19 @@ public class RobotContainer {
     private final EndgameLiftSubsystem m_endgameLift = new EndgameLiftSubsystem();
     private final SafeInitializationCommand m_safetyInitCommand = new SafeInitializationCommand(
     m_safetySystem, m_ArmSubsystem, m_elevatorSubsystem);
-    
     // Replace PhotonVision with Limelight
     
     private final SendableChooser<Command> autoChooser;
     
     public RobotContainer() {
-        
-        // Register named commands for PathPlanner BEFORE building the auto chooser
-        registerAutonomousCommands();
-        
         // Build the auto chooser
+        registerAutonomousCommands();
         autoChooser = AutoBuilder.buildAutoChooser("New Auto");
         SmartDashboard.putData("Auto Mode", autoChooser);
+        // Register named commands for PathPlanner BEFORE building the auto chooser
+        
+        
+        
 
         configureBindings();
     }
@@ -157,7 +160,8 @@ public class RobotContainer {
         joystick.povLeft().onTrue(new L3ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povDown().onTrue(new L2ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
         joystick.povRight().onTrue(new ArmElevatorToPositionCommand(m_safetySystem, 4.0, 0));
-        
+        //joystick.x().onTrue(new AlignToReefTagRight(drivetrain));
+        //joystick.a().onTrue(new AlignToReefTagLeft(drivetrain));
         // Y+B combination (should come first)
         joystick.y().and(joystick.b())
         .onTrue(new L1ScoreCommand(m_safetySystem, m_coralIntake, m_elevatorSubsystem, m_ArmSubsystem));
@@ -175,8 +179,8 @@ public class RobotContainer {
         joystick.start().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
-
-        //joystick.x().onTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
+        
+        joystick.x().onTrue(new L2AlgaeCommand(m_safetySystem, m_algaeIntake));
         
         // Button to move to processor position
         //joystick.a().onTrue(new ProcessorCommand(m_safetySystem, m_algaeIntake));
@@ -196,6 +200,10 @@ public class RobotContainer {
         return sign * adjustedValue;
     }
 
+    /**
+     * Preload all autonomous routines to avoid delays during autonomous mode
+     */
+    
     public Command getAutonomousCommand() {
         return autoChooser.getSelected();
     }
