@@ -308,6 +308,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 return true;
             }
             if (est.rawFiducials[0].distToCamera > 3.0) {
+
+
+
+
+                
                 SmartDashboard.putString(name + " Reject Reason", "Too far");
                 return true;
             }
